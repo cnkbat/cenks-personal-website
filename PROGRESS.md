@@ -15,12 +15,27 @@ GitHub: https://github.com/cnkbat/cenks-personal-website
 - [x] README written
 - [x] Initial commit pushed to GitHub (`main` branch, commit `98d0fd0`)
 - [x] GitHub repo renamed to `cenks-personal-website`
+- [x] Reusable `LegalLayout` component (`app/components/legal/LegalLayout.tsx`)
+- [x] Content Machine — Privacy Policy (`/content-machine/privacy`) — commit `9c3dc22`
+- [x] Content Machine — Terms of Service (`/content-machine/terms`) — commit `9c3dc22`
 
 ## Pending
 
 - [ ] Import repo into personal Vercel account and deploy
-- [ ] Add Privacy Policy page
-- [ ] Add Terms of Service page
-- [ ] Add Data Deletion page
+- [ ] Content Machine — Data Deletion page (`/content-machine/data-deletion`)
 - [ ] Add API platform review pages
 - [ ] Add project documentation pages
+
+---
+
+## Architecture Notes
+
+### Legal page pattern
+Future projects reuse `LegalLayout` by adding two files:
+
+```
+app/{project-slug}/privacy/page.tsx
+app/{project-slug}/terms/page.tsx
+```
+
+Each page imports `LegalLayout` and passes `projectName`, `projectSlug`, `pageType`, and `lastUpdated`. No changes to shared code required.
