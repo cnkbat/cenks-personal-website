@@ -8,6 +8,9 @@ export const metadata: Metadata = {
   title: "Public Documentation Hub",
   description:
     "A public location for project documentation and future public resources.",
+  other: {
+    "tiktok-developers-site-verification": "hdqx7r1Ek28viAqxrQrRkbu6Gi2sN4Z3",
+  },
 };
 
 export default function RootLayout({
