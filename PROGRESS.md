@@ -3,6 +3,7 @@
 ## cenks-personal-website
 
 GitHub: https://github.com/cnkbat/cenks-personal-website
+Live: https://cenk-emir-bat.vercel.app
 
 ---
 
@@ -18,10 +19,15 @@ GitHub: https://github.com/cnkbat/cenks-personal-website
 - [x] Reusable `LegalLayout` component (`app/components/legal/LegalLayout.tsx`)
 - [x] Content Machine — Privacy Policy (`/content-machine/privacy`) — commit `9c3dc22`
 - [x] Content Machine — Terms of Service (`/content-machine/terms`) — commit `9c3dc22`
+- [x] Vercel deployment connected and live
+- [x] TikTok verification file at `/content-machine/privacy/tiktokckwqS5Qfv2ECBQVieIkjzQm3IGAxZTJg`
+- [x] TikTok verification file at root `/tiktokhdqx7r1Ek28viAqxrQrRkbu6Gi2sN4Z3`
+- [x] TikTok URL prefix verification file — `public/tiktok-developers-site-verification.txt` — commit `82955dd`
+  - Returns HTTP 200, `Content-Type: text/plain; charset=utf-8`
+  - Verified live via curl: `https://cenk-emir-bat.vercel.app/tiktok-developers-site-verification.txt`
 
 ## Pending
 
-- [ ] Import repo into personal Vercel account and deploy
 - [ ] Content Machine — Data Deletion page (`/content-machine/data-deletion`)
 - [ ] Add API platform review pages
 - [ ] Add project documentation pages
