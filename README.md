@@ -1,12 +1,43 @@
-# Public Documentation Hub
+# Cenk Emir Bat — Premium Digital Solutions
 
-A minimal static website serving as a public location for project documentation and future public resources.
+The personal business website of **Cenk Emir Bat**. A premium, bilingual (Turkish/English) marketing site for helping local businesses become more professional online — modern websites, CRM, online appointment systems, SEO and digital growth.
+
+Live: https://cenk-emir-bat.vercel.app
 
 ## Stack
 
-- Next.js 16 (App Router, static export)
-- TypeScript
-- Tailwind CSS 4
+- **Next.js 16** (App Router, static export)
+- **TypeScript**
+- **Tailwind CSS 4**
+- **Framer Motion** — section reveals, hover lift, micro-interactions
+- **Lucide Icons**
+- **Geist** font (Sans + Mono)
+- **shadcn/ui**-style primitives (`components/ui`)
+
+## Features
+
+- Dark-luxury design — glassmorphism, soft gradients, glow, animated blurred backgrounds, grid overlays
+- Bilingual i18n (TR default / EN) via React context + typed dictionaries — see `lib/i18n/dictionaries.ts`
+- Sticky navbar (transparent → glass on scroll) with language switcher, CTA and WhatsApp
+- Sections: Hero, Business Value, Services, Demos (with product mockups), Packages, About, Contact
+- Placeholder demo routes: `/demos/{beauty-crm,barber,clinic,real-estate,restaurant}`
+- SEO: metadata, Open Graph (generated image), `robots.txt`, `sitemap.xml`
+- Fully responsive, accessible, reduced-motion aware
+
+## Project Structure
+
+```
+app/
+  (site)/            # marketing site (navbar, footer, background)
+    page.tsx         # home
+    demos/<slug>/    # demo placeholder routes
+  content-machine/   # preserved legal pages for a separate product
+  layout.tsx         # root: fonts, metadata, providers
+  opengraph-image.tsx
+  sitemap.ts / robots.ts
+components/           # layout, sections, ui, providers
+lib/i18n/             # translation dictionaries + site config
+```
 
 ## Development
 
@@ -18,11 +49,11 @@ npm run dev
 ## Build
 
 ```bash
-npm run build
+npm run build   # static export to out/
 ```
-
-Output is generated in the `out/` directory as a fully static site.
 
 ## Deployment
 
-Deployed automatically via Vercel on every push to `main`.
+Deployed to the Vercel project **cenk-emir-bat** on every push to `main`.
+
+> Note: the `content-machine/` legal pages and root TikTok verification files belong to a separate product and are intentionally preserved.

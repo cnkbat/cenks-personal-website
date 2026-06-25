@@ -9,39 +9,29 @@ Live: https://cenk-emir-bat.vercel.app
 
 ## Completed
 
-- [x] Scaffold Next.js 16 project (App Router, TypeScript, Tailwind CSS 4)
-- [x] Home page — title, description, additional pages note
-- [x] Static export configured (`output: "export"` in `next.config.ts`)
-- [x] Production build verified (all pages static, no TypeScript errors)
-- [x] README written
-- [x] Initial commit pushed to GitHub (`main` branch, commit `98d0fd0`)
-- [x] GitHub repo renamed to `cenks-personal-website`
-- [x] Reusable `LegalLayout` component (`app/components/legal/LegalLayout.tsx`)
-- [x] Content Machine — Privacy Policy (`/content-machine/privacy`) — commit `9c3dc22`
-- [x] Content Machine — Terms of Service (`/content-machine/terms`) — commit `9c3dc22`
-- [x] Vercel deployment connected and live
-- [x] TikTok verification file at `/content-machine/privacy/tiktokckwqS5Qfv2ECBQVieIkjzQm3IGAxZTJg`
-- [x] TikTok verification file at root `/tiktokhdqx7r1Ek28viAqxrQrRkbu6Gi2sN4Z3`
-- [x] TikTok URL prefix verification file — `public/tiktok-developers-site-verification.txt` — commit `82955dd`
-  - Returns HTTP 200, `Content-Type: text/plain; charset=utf-8`
-  - Verified live via curl: `https://cenk-emir-bat.vercel.app/tiktok-developers-site-verification.txt`
+- [x] Full rebuild as a premium bilingual (TR/EN) business marketing site
+- [x] Stack: Next.js 16 (App Router, static export), TypeScript, Tailwind 4, Framer Motion, Lucide, Geist
+- [x] Dark-luxury design system (`app/globals.css`) — glass, glow, blobs, grid, particles
+- [x] i18n via React context + typed dictionaries (`lib/i18n/dictionaries.ts`), TR default
+- [x] Sections: Hero, Business Value, Services, Demos, Packages, About, Contact
+- [x] Sticky glass navbar w/ language switcher + WhatsApp + CTA; floating WhatsApp button
+- [x] Demo placeholder routes with product mockups: `/demos/{beauty-crm,barber,clinic,real-estate,restaurant}`
+- [x] SEO: metadata, generated Open Graph image, `robots.txt`, `sitemap.xml`
+- [x] Production build verified (all routes static, 0 TypeScript / lint / console errors)
+- [x] Preserved separate-product assets: `content-machine/` legal pages + TikTok verification files
 
-## Pending
+## Preserved (separate product — do not remove)
 
-- [ ] Content Machine — Data Deletion page (`/content-machine/data-deletion`)
-- [ ] Add API platform review pages
-- [ ] Add project documentation pages
+- `app/content-machine/privacy` and `app/content-machine/terms` (+ `app/components/legal/LegalLayout.tsx`)
+- `public/tiktok-developers-site-verification.txt`
+- `public/tiktokhdqx7r1Ek28viAqxrQrRkbu6Gi2sN4Z3`
+- `public/content-machine/privacy/tiktokckwqS5Qfv2ECBQVieIkjzQm3IGAxZTJg`
+- TikTok meta tag in root `app/layout.tsx`
 
 ---
 
 ## Architecture Notes
 
-### Legal page pattern
-Future projects reuse `LegalLayout` by adding two files:
-
-```
-app/{project-slug}/privacy/page.tsx
-app/{project-slug}/terms/page.tsx
-```
-
-Each page imports `LegalLayout` and passes `projectName`, `projectSlug`, `pageType`, and `lastUpdated`. No changes to shared code required.
+The marketing site lives in the `(site)` route group so its chrome (navbar, footer,
+animated background) never bleeds into the preserved `content-machine` legal pages,
+which keep their own light-themed `LegalLayout`.

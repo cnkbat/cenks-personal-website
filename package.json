@@ -1,6 +1,6 @@
 {
-  "name": "public-docs",
-  "version": "0.1.0",
+  "name": "cenk-emir-bat",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -11,7 +11,13 @@
   "dependencies": {
     "next": "16.2.9",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "framer-motion": "^12.23.12",
+    "lucide-react": "^0.469.0",
+    "geist": "^1.5.1",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.3.1",
+    "class-variance-authority": "^0.7.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
