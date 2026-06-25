@@ -18,20 +18,26 @@ export function AnimatedNumber({
   const ref = useRef<HTMLSpanElement>(null);
   const inView = useInView(ref, { once: true, margin: "-40px" });
   const match = value.match(/^(\D*)(\d+)(.*)$/);
+  const hasNumber = match !== null;
+  const prefix = match ? match[1] : "";
   const target = match ? parseInt(match[2], 10) : 0;
+  const suffix = match ? match[3] : "";
   const [display, setDisplay] = useState(0);
 
+  // Depend only on stable primitives. Putting the `match` array (recreated every
+  // render) in the deps made this effect re-run on each `setDisplay`, restarting
+  // the count from 0 every frame.
   useEffect(() => {
-    if (!inView || !match) return;
+    if (!inView || !hasNumber) return;
     const controls = animate(0, target, {
       duration: 1.5,
       ease: [0.22, 1, 0.36, 1],
       onUpdate: (v) => setDisplay(Math.round(v)),
     });
     return () => controls.stop();
-  }, [inView, target, match]);
+  }, [inView, hasNumber, target]);
 
-  if (!match) {
+  if (!hasNumber) {
     return (
       <span ref={ref} className={className}>
         {value}
@@ -41,9 +47,9 @@ export function AnimatedNumber({
 
   return (
     <span ref={ref} className={className}>
-      {match[1]}
+      {prefix}
       {display}
-      {match[3]}
+      {suffix}
     </span>
   );
 }
