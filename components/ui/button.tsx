@@ -5,19 +5,19 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-medium transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)] disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]",
+  "relative inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-medium transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)] disabled:pointer-events-none disabled:opacity-50 active:scale-[0.97]",
   {
     variants: {
       variant: {
         primary:
-          "bg-white text-[#08090f] hover:bg-white/90 shadow-[0_8px_30px_-8px_rgba(255,255,255,0.35)]",
+          "bg-white text-[#08090f] hover:bg-white/90 shadow-[0_8px_30px_-8px_rgba(255,255,255,0.35)] hover:-translate-y-0.5 hover:shadow-[0_14px_40px_-10px_rgba(255,255,255,0.45)]",
         gradient:
-          "text-white bg-[linear-gradient(110deg,#7c5cff,#6d4bff_40%,#22d3ee)] bg-[length:200%_100%] bg-[position:0%] hover:bg-[position:100%] shadow-[0_10px_40px_-10px_rgba(124,92,255,0.7)]",
+          "text-white bg-[linear-gradient(110deg,#7c5cff,#6d4bff_40%,#22d3ee)] bg-[length:200%_100%] bg-[position:0%] hover:bg-[position:100%] shadow-[0_10px_40px_-12px_rgba(124,92,255,0.75)] hover:-translate-y-0.5 hover:shadow-[0_18px_55px_-10px_rgba(124,92,255,0.9)]",
         glass:
-          "glass text-white hover:bg-white/[0.07] hover:border-white/20",
+          "glass text-white hover:bg-white/[0.08] hover:border-white/20 hover:-translate-y-0.5 hover:shadow-[0_14px_40px_-16px_rgba(0,0,0,0.8)]",
         ghost: "text-[var(--muted)] hover:text-white hover:bg-white/[0.05]",
         whatsapp:
-          "bg-[#25D366] text-[#06210f] font-semibold hover:bg-[#22c35e] shadow-[0_10px_40px_-10px_rgba(37,211,102,0.7)]",
+          "bg-[#25D366] text-[#06210f] font-semibold hover:bg-[#22c35e] shadow-[0_10px_40px_-12px_rgba(37,211,102,0.75)] hover:-translate-y-0.5 hover:shadow-[0_18px_55px_-10px_rgba(37,211,102,0.9)]",
       },
       size: {
         sm: "h-9 px-4 text-[13px]",

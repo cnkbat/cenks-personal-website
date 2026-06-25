@@ -20,19 +20,19 @@ export function Packages() {
           subtitle={t.packages.subtitle}
         />
 
-        <StaggerGroup className="mt-14 grid grid-cols-1 gap-5 lg:grid-cols-3">
+        <StaggerGroup className="mt-16 grid grid-cols-1 items-center gap-6 lg:grid-cols-3">
           {t.packages.items.map((pkg) => {
             const highlighted = pkg.highlighted;
             return (
               <StaggerItem key={pkg.name} className="h-full">
                 <motion.div
-                  whileHover={{ y: -6 }}
-                  transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                  whileHover={{ y: -8 }}
+                  transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
                   className={cn(
-                    "relative flex h-full flex-col rounded-2xl border p-7",
+                    "relative flex h-full flex-col rounded-3xl p-8",
                     highlighted
-                      ? "border-[var(--accent)]/40 bg-[linear-gradient(180deg,rgba(124,92,255,0.12),rgba(13,15,28,0.4))] glow-ring"
-                      : "card-glow border-white/10 bg-white/[0.02]",
+                      ? "ring-gradient glass-card glow-ring bg-[linear-gradient(180deg,rgba(124,92,255,0.16),rgba(13,15,28,0.55))] lg:scale-[1.04]"
+                      : "card-glow glass-card",
                   )}
                 >
                   {highlighted && (

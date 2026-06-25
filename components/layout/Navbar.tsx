@@ -36,14 +36,14 @@ export function Navbar() {
         initial={{ y: -80, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="fixed inset-x-0 top-0 z-50 flex justify-center px-4 pt-3 sm:pt-4"
+        className="fixed inset-x-0 top-0 z-50 flex justify-center px-4 pt-3"
       >
         <nav
           className={cn(
-            "flex w-full max-w-6xl items-center justify-between rounded-2xl px-4 py-2.5 transition-all duration-500 sm:px-5",
+            "flex w-full items-center justify-between rounded-2xl px-4 transition-all duration-[450ms] ease-[cubic-bezier(0.22,1,0.36,1)] sm:px-5",
             scrolled
-              ? "glass-strong shadow-[0_20px_60px_-30px_rgba(0,0,0,0.9)]"
-              : "border border-transparent bg-transparent",
+              ? "glass-strong max-w-5xl py-2 shadow-[0_24px_70px_-32px_rgba(0,0,0,0.95)]"
+              : "max-w-6xl border border-transparent bg-transparent py-2.5",
           )}
         >
           <a

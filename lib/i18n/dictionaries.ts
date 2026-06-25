@@ -98,6 +98,10 @@ type Dictionary = {
     comingSoon: string;
     comingSoonDesc: string;
     contactCta: string;
+    previewLabel: string;
+    benefitsTitle: string;
+    benefits: string[];
+    stickyCta: string;
   };
 };
 
@@ -387,6 +391,15 @@ export const dictionaries: Record<Locale, Dictionary> = {
       comingSoonDesc:
         "Bu sektöre özel demo şu anda geliştiriliyor. Detaylar için benimle iletişime geçebilirsiniz.",
       contactCta: "İletişime Geç",
+      previewLabel: "Canlı Önizleme",
+      benefitsTitle: "İşletmenize Kazanımları",
+      benefits: [
+        "Daha profesyonel bir dijital görünüm",
+        "Daha fazla müşteri ve dönüşüm",
+        "Daha az manuel iş, daha çok otomasyon",
+        "Her cihazda hızlı ve kusursuz deneyim",
+      ],
+      stickyCta: "WhatsApp'tan Sor",
     },
   },
   en: {
@@ -674,6 +687,15 @@ export const dictionaries: Record<Locale, Dictionary> = {
       comingSoonDesc:
         "A demo tailored to this industry is currently being built. Reach out for details.",
       contactCta: "Get in Touch",
+      previewLabel: "Live Preview",
+      benefitsTitle: "What Your Business Gains",
+      benefits: [
+        "A more professional digital presence",
+        "More customers and conversions",
+        "Less manual work, more automation",
+        "A fast, flawless experience on every device",
+      ],
+      stickyCta: "Ask on WhatsApp",
     },
   },
 };

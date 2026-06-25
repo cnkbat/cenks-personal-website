@@ -70,6 +70,7 @@ export function Contact() {
       icon: MessageCircle,
       href: siteConfig.whatsapp,
       external: true,
+      copy: siteConfig.phone,
     },
     {
       label: t.contact.email,
@@ -84,6 +85,7 @@ export function Contact() {
       icon: Instagram,
       href: siteConfig.instagram,
       external: true,
+      copy: siteConfig.instagram,
     },
     {
       label: t.contact.linkedin,
@@ -91,6 +93,7 @@ export function Contact() {
       icon: Linkedin,
       href: siteConfig.linkedin,
       external: true,
+      copy: siteConfig.linkedin,
     },
     {
       label: t.contact.website,
@@ -98,6 +101,7 @@ export function Contact() {
       icon: Globe,
       href: siteConfig.url,
       external: true,
+      copy: siteConfig.url,
     },
   ];
 
@@ -110,20 +114,24 @@ export function Contact() {
           subtitle={t.contact.subtitle}
         />
 
-        <StaggerGroup className="mt-14 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <StaggerGroup className="mt-16 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {cards.map((c) => {
             const Icon = c.icon;
             return (
               <StaggerItem key={c.label}>
-                <div className="card-glow group flex h-full items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.02] p-5">
+                <div className="card-glow glass-card group flex h-full items-center justify-between gap-3 rounded-3xl p-5">
                   <a
                     href={c.href}
                     target={c.external ? "_blank" : undefined}
                     rel={c.external ? "noopener noreferrer" : undefined}
                     className="flex min-w-0 flex-1 items-center gap-3.5"
                   >
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-[linear-gradient(135deg,rgba(124,92,255,0.18),rgba(34,211,238,0.1))] text-white">
-                      <Icon className="h-5 w-5" strokeWidth={1.6} />
+                    <span className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-[linear-gradient(135deg,rgba(124,92,255,0.2),rgba(34,211,238,0.12))] text-white transition-transform duration-500 group-hover:-translate-y-0.5">
+                      <span
+                        aria-hidden
+                        className="absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_50%_30%,rgba(124,92,255,0.5),transparent_70%)] opacity-0 blur-md transition-opacity duration-500 group-hover:opacity-100"
+                      />
+                      <Icon className="relative h-5 w-5" strokeWidth={1.6} />
                     </span>
                     <span className="min-w-0">
                       <span className="block text-xs font-medium uppercase tracking-wide text-white/40">

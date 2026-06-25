@@ -21,15 +21,15 @@ export function Demos() {
           subtitle={t.demos.subtitle}
         />
 
-        <StaggerGroup className="mt-14 grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+        <StaggerGroup className="mt-16 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {t.demos.items.map((demo) => {
             const ready = demo.status === "ready";
             return (
               <StaggerItem key={demo.slug} className="h-full">
                 <motion.div
-                  whileHover={{ y: -6 }}
-                  transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                  className="card-glow flex h-full flex-col rounded-2xl border border-white/10 bg-[var(--color-surface)]/50 p-4"
+                  whileHover={{ y: -8 }}
+                  transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                  className="card-glow glass-card flex h-full flex-col rounded-3xl p-5"
                 >
                   <div className="relative">
                     <Mockup slug={demo.slug} />
