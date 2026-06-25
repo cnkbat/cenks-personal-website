@@ -40,7 +40,7 @@ export function Services() {
           {t.services.items.map((item, i) => {
             const Icon = icons[i % icons.length];
             return (
-              <StaggerItem key={item.title}>
+              <StaggerItem key={i}>
                 <motion.div
                   whileHover={{ y: -8 }}
                   transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}

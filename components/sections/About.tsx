@@ -40,9 +40,9 @@ export function About() {
 
           <Reveal delay={0.2}>
             <div className="mt-9 grid grid-cols-3 gap-3">
-              {t.about.highlights.map((h) => (
+              {t.about.highlights.map((h, i) => (
                 <div
-                  key={h.label}
+                  key={i}
                   className="glass-card rounded-2xl p-4 transition-transform duration-300 hover:-translate-y-1"
                 >
                   <div className="text-lg font-semibold tracking-tight text-white">

@@ -34,7 +34,7 @@ export function BusinessValue() {
           {t.value.items.map((item, i) => {
             const Icon = icons[i % icons.length];
             return (
-              <StaggerItem key={item.title}>
+              <StaggerItem key={i}>
                 <div className="card-glow glass-card group h-full rounded-3xl p-7">
                   <div className="relative flex h-13 w-13 items-center justify-center rounded-2xl border border-white/10 bg-[linear-gradient(135deg,rgba(124,92,255,0.22),rgba(34,211,238,0.12))] text-[var(--accent-2)] transition-all duration-500 group-hover:-translate-y-1 group-hover:text-white">
                     <span

@@ -84,9 +84,9 @@ export function Hero() {
             transition={{ duration: 0.8, delay: 0.4, ease }}
             className="mx-auto mt-12 grid max-w-lg grid-cols-3 gap-3 lg:mx-0"
           >
-            {t.hero.stats.map((s) => (
+            {t.hero.stats.map((s, i) => (
               <div
-                key={s.label}
+                key={i}
                 className="glass-card group rounded-2xl px-3 py-4 text-center transition-transform duration-300 hover:-translate-y-1"
               >
                 <AnimatedNumber

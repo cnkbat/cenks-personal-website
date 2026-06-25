@@ -115,10 +115,10 @@ export function Contact() {
         />
 
         <StaggerGroup className="mt-16 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {cards.map((c) => {
+          {cards.map((c, i) => {
             const Icon = c.icon;
             return (
-              <StaggerItem key={c.label}>
+              <StaggerItem key={i}>
                 <div className="card-glow glass-card group flex h-full items-center justify-between gap-3 rounded-3xl p-5">
                   <a
                     href={c.href}

@@ -21,10 +21,10 @@ export function Packages() {
         />
 
         <StaggerGroup className="mt-16 grid grid-cols-1 items-center gap-6 lg:grid-cols-3">
-          {t.packages.items.map((pkg) => {
+          {t.packages.items.map((pkg, i) => {
             const highlighted = pkg.highlighted;
             return (
-              <StaggerItem key={pkg.name} className="h-full">
+              <StaggerItem key={i} className="h-full">
                 <motion.div
                   whileHover={{ y: -8 }}
                   transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
