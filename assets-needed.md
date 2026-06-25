@@ -13,7 +13,19 @@ minimal · premium SaaS / high-end product design · OKLCH-clean color · no
 stock-photo feel · no harsh pure-black (always slightly tinted `#060711`).
 
 Priority: **P0** = on first viewport (hero), **P1** = key sections, **P2** = nice-to-have.
-Status: `placeholder` = in-place placeholder live · `needed` = not yet produced.
+Status: `placeholder` = in-place placeholder live · `needed` = not yet produced · `shipped` = real asset live in `public/assets/`.
+
+---
+
+## ✅ Generated & live (2026-06-26, via OpenAI gpt-image-1, WebP)
+
+Real product-preview images now live in `public/assets/` and wired in:
+- `beauty-crm-preview.webp` — demo card + demo detail **and** reused as the hero main dashboard
+- `barber-preview.webp`, `clinic-preview.webp`, `real-estate-preview.webp`, `restaurant-preview.webp` — demo cards + demo detail previews
+
+Still hand-built placeholders (intentionally): hero floating phone / analytics / notification
+cards (bilingual, crisp) and the About profile card. **`cenk-profile.webp` should be a real
+photo of Cenk — not AI-generated** (a fake face on a personal sales site undermines trust).
 
 ---
 

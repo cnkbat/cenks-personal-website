@@ -116,12 +116,9 @@ export function DemoDetail({ slug }: { slug: string }) {
               <Sparkles className="h-3 w-3 text-[var(--accent-2)]" />
               {t.demoPages.previewLabel}
             </span>
-            <div className="relative mx-auto max-w-lg scale-[1.1] py-8 sm:scale-[1.45] sm:py-14">
-              <Mockup slug={demo.slug} />
+            <div className="relative mx-auto max-w-2xl py-2">
+              <Mockup slug={demo.slug} className="rounded-2xl" />
             </div>
-            <span className="pointer-events-none absolute bottom-3 right-4 rounded-md bg-black/45 px-2 py-1 font-mono text-[9px] leading-none tracking-tight text-white/45 backdrop-blur-sm">
-              {demo.slug}-preview.webp · 1600×1000
-            </span>
           </div>
         </motion.div>
 

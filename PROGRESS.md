@@ -45,6 +45,13 @@ project `cenk-emir-bat`.
 - [x] Cards no longer disappear on language switch (stable list keys instead of translated-string keys)
 - [x] Hero stat count-up no longer restarts every frame (stable `useEffect` deps in `AnimatedNumber`)
 
+### Generated visual assets (OpenAI gpt-image-1)
+- [x] 5 industry product-preview images generated as compact WebP in `public/assets/`
+      (beauty-crm, barber, clinic, real-estate, restaurant)
+- [x] Wired into demo cards + demo detail previews; beauty image reused as the hero main dashboard
+- [x] Hero floating phone/analytics/notification stay hand-built (bilingual, crisp)
+- [x] Portrait left as monogram on purpose — `cenk-profile.webp` should be a real photo, not AI
+
 ### Verified
 - [x] Production build green (all routes static, 0 TS errors; only pre-existing content-machine lint warnings)
 - [x] Live production checks: home, demo pages, TikTok verification (`text/plain`), content-machine pages, OG image (`image/png`) all 200
@@ -64,8 +71,10 @@ project `cenk-emir-bat`.
 
 ## Pending / next
 
-- [ ] Produce and drop in real visual assets per `assets-needed.md` (hero showcase, demo previews, `cenk-profile.webp`) into `public/assets/`
+- [ ] Provide a real photo for `cenk-profile.webp` (About profile card) and swap out the monogram
+- [ ] Optionally generate real images for the hero floating phone/analytics/notification cards
 - [ ] Add a custom domain (Contact + footer currently show the Vercel URL)
+- [ ] Rotate the OpenAI API key that was shared in chat (stored locally in gitignored `.env`)
 
 ---
 
