@@ -4,21 +4,53 @@
 
 GitHub: https://github.com/cnkbat/cenks-personal-website
 Live: https://cenk-emir-bat.vercel.app
+Last updated: 2026-06-26
+
+---
+
+## Status: ✅ Live in production
+
+A premium, bilingual (TR default / EN) business marketing site for Cenk Emir Bat's
+digital solutions work. Built, polished, and deployed to the existing Vercel
+project `cenk-emir-bat`.
 
 ---
 
 ## Completed
 
+### Foundation
 - [x] Full rebuild as a premium bilingual (TR/EN) business marketing site
 - [x] Stack: Next.js 16 (App Router, static export), TypeScript, Tailwind 4, Framer Motion, Lucide, Geist
 - [x] Dark-luxury design system (`app/globals.css`) — glass, glow, blobs, grid, particles
-- [x] i18n via React context + typed dictionaries (`lib/i18n/dictionaries.ts`), TR default
+- [x] i18n via React context + typed dictionaries (`lib/i18n/dictionaries.ts`), TR default, client-side switch
 - [x] Sections: Hero, Business Value, Services, Demos, Packages, About, Contact
 - [x] Sticky glass navbar w/ language switcher + WhatsApp + CTA; floating WhatsApp button
 - [x] Demo placeholder routes with product mockups: `/demos/{beauty-crm,barber,clinic,real-estate,restaurant}`
-- [x] SEO: metadata, generated Open Graph image, `robots.txt`, `sitemap.xml`
-- [x] Production build verified (all routes static, 0 TypeScript / lint / console errors)
+- [x] SEO: metadata, generated Open Graph image (forced `image/png` via `vercel.json`), `robots.txt`, `sitemap.xml`
 - [x] Preserved separate-product assets: `content-machine/` legal pages + TikTok verification files
+
+### Premium visual polish sprint
+- [x] +25% section spacing, premium glass-card/shadow utilities, stronger grid, glow-pulse + float animations
+- [x] Richer ambient background (layered purple/blue/magenta radial lights, blobs, particles, depth)
+- [x] Thinner navbar with stronger glass + premium shadow on scroll
+- [x] Hero redesigned to two columns + layered floating product showcase (dashboard, iPhone, analytics + notification cards) with asset-filename captions
+- [x] Animated count-up stat cards
+- [x] Apple-style Services cards, richer Business Value / Demos / Contact cards
+- [x] Premium glass pricing (highlighted card scaled + gradient ring)
+- [x] Wider About with premium profile card (`cenk-profile.webp` placeholder)
+- [x] Demo detail pages redesigned: hero, large preview, problem/solution, feature grid, benefits, CTA, sticky contact button
+- [x] `assets-needed.md` — single source of truth for all pending visual assets
+
+### Bug fixes
+- [x] Cards no longer disappear on language switch (stable list keys instead of translated-string keys)
+- [x] Hero stat count-up no longer restarts every frame (stable `useEffect` deps in `AnimatedNumber`)
+
+### Verified
+- [x] Production build green (all routes static, 0 TS errors; only pre-existing content-machine lint warnings)
+- [x] Live production checks: home, demo pages, TikTok verification (`text/plain`), content-machine pages, OG image (`image/png`) all 200
+- [x] Visual QA on desktop + mobile; language toggle verified
+
+---
 
 ## Preserved (separate product — do not remove)
 
@@ -30,8 +62,19 @@ Live: https://cenk-emir-bat.vercel.app
 
 ---
 
+## Pending / next
+
+- [ ] Produce and drop in real visual assets per `assets-needed.md` (hero showcase, demo previews, `cenk-profile.webp`) into `public/assets/`
+- [ ] Add a custom domain (Contact + footer currently show the Vercel URL)
+
+---
+
 ## Architecture Notes
 
-The marketing site lives in the `(site)` route group so its chrome (navbar, footer,
-animated background) never bleeds into the preserved `content-machine` legal pages,
-which keep their own light-themed `LegalLayout`.
+- The marketing site lives in the `app/(site)/` route group so its chrome (navbar,
+  footer, animated background) never bleeds into the preserved `content-machine`
+  legal pages, which keep their own light-themed `LegalLayout`.
+- Deploy with `vercel deploy --prod --yes` (project already linked). Pushing to
+  `main` also triggers a Vercel build.
+- i18n is client-side (no locale URL prefixes); never key React lists by translated
+  strings — use stable keys so cards don't remount on language switch.
