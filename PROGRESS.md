@@ -74,7 +74,12 @@ project `cenk-emir-bat`.
 - [ ] Provide a real photo for `cenk-profile.webp` (About profile card) and swap out the monogram
 - [ ] Optionally generate real images for the hero floating phone/analytics/notification cards
 - [ ] Add a custom domain (Contact + footer currently show the Vercel URL)
-- [ ] Rotate the OpenAI API key that was shared in chat (stored locally in gitignored `.env`)
+
+## Secrets
+
+- OpenAI API key (used to generate the product-preview images) is stored locally in
+  `.env` as `OPENAI_API_KEY`. `.env` is **gitignored — never commit or push it**.
+  Kept as-is per owner's decision (not rotated).
 
 ---
 
