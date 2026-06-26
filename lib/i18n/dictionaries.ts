@@ -49,6 +49,7 @@ type Dictionary = {
       problem: string;
       solution: string;
       features: string[];
+      href?: string;
     }[];
   };
   packages: {
@@ -216,6 +217,23 @@ export const dictionaries: Record<Locale, Dictionary> = {
       solutionLabel: "Çözüm",
       featuresLabel: "Öne Çıkan Özellikler",
       items: [
+        {
+          slug: "puruze-caffe",
+          name: "Püruze Caffe Web Sitesi Yenileme",
+          type: "Kafe / Restoran Web Sitesi",
+          status: "ready",
+          href: "/puruze-caffe",
+          problem:
+            "Eski, Wix tarzı site; zayıf görsel sunum, net çağrı butonları ve mobil deneyim eksik.",
+          solution:
+            "Kuzguncuk'ta yer alan Püruze Caffe için hazırlanan premium web sitesi demo çalışması.",
+          features: [
+            "Sıcak, premium kafe tasarımı",
+            "Menü, galeri ve sosyal kanıt",
+            "Yol tarifi, rezervasyon ve arama",
+            "Mobil öncelikli ve SEO uyumlu",
+          ],
+        },
         {
           slug: "beauty-crm",
           name: "Güzellik Kliniği CRM",
@@ -512,6 +530,23 @@ export const dictionaries: Record<Locale, Dictionary> = {
       solutionLabel: "Solution",
       featuresLabel: "Key Features",
       items: [
+        {
+          slug: "puruze-caffe",
+          name: "Püruze Caffe Website Redesign",
+          type: "Cafe / Restaurant Website",
+          status: "ready",
+          href: "/puruze-caffe",
+          problem:
+            "An outdated, Wix-like site with weak visuals, unclear CTAs and a poor mobile experience.",
+          solution:
+            "A premium website demo crafted for Püruze Caffe, a cozy cafe in Kuzguncuk, İstanbul.",
+          features: [
+            "Warm, premium cafe design",
+            "Menu, gallery & social proof",
+            "Directions, reservation & call",
+            "Mobile-first and SEO-friendly",
+          ],
+        },
         {
           slug: "beauty-crm",
           name: "Beauty Clinic CRM",

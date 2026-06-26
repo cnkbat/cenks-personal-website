@@ -90,7 +90,9 @@ export function Demos() {
                     </ul>
 
                     <Link
-                      href={`/demos/${demo.slug}`}
+                      href={demo.href ?? `/demos/${demo.slug}`}
+                      target={demo.href ? "_blank" : undefined}
+                      rel={demo.href ? "noopener noreferrer" : undefined}
                       className={cn(
                         "group mt-5 inline-flex items-center justify-center gap-2 rounded-full border px-4 py-2.5 text-sm font-medium transition-all",
                         ready

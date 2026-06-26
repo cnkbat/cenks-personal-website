@@ -57,6 +57,24 @@ project `cenk-emir-bat`.
 - [x] Live production checks: home, demo pages, TikTok verification (`text/plain`), content-machine pages, OG image (`image/png`) all 200
 - [x] Visual QA on desktop + mobile; language toggle verified
 
+### Client demo: Püruze Caffe (Kuzguncuk)
+- [x] Standalone premium, warm (cream / terracotta / espresso) Turkish cafe website demo
+      at `/puruze-caffe` — self-contained route outside the dark `(site)` group so it keeps
+      its own light theme (`components/puruze/PuruzeSite.tsx`)
+- [x] Home sections: hero (3 CTAs), story (Kuzguncuk + Ekmek Teknesi), weekend breakfast
+      notice card (09:00–14:00 kahvaltı / 14:00 sonrası kahve-tatlı), menu teaser
+      (category cards → menu page), gallery, sample reviews, location (address,
+      phone 0216 310 15 35, @puruzecaffe, Google Maps embed + CTA)
+- [x] Dedicated menu page at `/puruze-caffe/menu` (`components/puruze/PuruzeMenu.tsx`):
+      full menu by category with a sticky, horizontally-scrollable category nav;
+      shared header/footer/mobile-bar extracted to `components/puruze/shared.tsx`
+- [x] Mobile-first sticky bottom CTA bar (Ara / Yol Tarifi / Instagram) on both pages
+- [x] Turkish SEO metadata (title + description + local keywords), serif headings (Playfair Display)
+- [x] 7 realistic warm cafe visuals generated (OpenAI gpt-image-1) in `public/puruze/`
+- [x] Portfolio card added to the Demos section (links out to `/puruze-caffe`, marked Live);
+      demo items now support an optional `href` for standalone demos
+- [x] "Demo · Tasarım: Cenk Emir Bat" ribbon + footer credit linking back to the portfolio
+
 ---
 
 ## Preserved (separate product — do not remove)

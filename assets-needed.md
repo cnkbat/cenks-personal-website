@@ -170,6 +170,23 @@ photo of Cenk — not AI-generated** (a fake face on a personal sales site under
 
 ---
 
+## Püruze Caffe demo (client pitch) — ✅ Generated & live
+
+Standalone warm-themed demo at `/puruze-caffe` (route outside the dark `(site)` group).
+Visuals generated via OpenAI gpt-image-1 (WebP), in `public/puruze/`:
+- `puruze-hero.webp` — hero background (cozy window scene)
+- `puruze-exterior.webp` — Kuzguncuk street cafe exterior (story)
+- `puruze-breakfast.webp` — serpme kahvaltı (story/gallery)
+- `puruze-coffee.webp` — specialty coffee detail (gallery)
+- `puruze-dessert.webp` — dessert display (gallery)
+- `puruze-interior.webp` — cozy interior (gallery)
+- `puruze-pet.webp` — pet-friendly corner, portrait (gallery)
+- `public/assets/puruze-caffe-preview.webp` — portfolio card thumbnail (derived from hero)
+
+All warm cream / terracotta / espresso tone, realistic, no text or logos.
+
+---
+
 ## 11. opengraph-image (already shipping)
 - **Dimensions:** 1200×630
 - **Usage:** Social share preview — generated at build via `app/opengraph-image.tsx`
