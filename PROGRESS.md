@@ -95,7 +95,7 @@ the dark `(site)` group, own theme, back-to-portfolio ribbon, sticky WhatsApp, f
       seans takibi** (Donut + Bar), müşteri/cilt kartı, önce-sonra galeri, gelir
 - [x] **ClinicOS** `/demos/clinic-os` — white/blue medical; hekim takvimi, bekleyen hastalar,
       ödeme takibi, doluluk; çok branş (diş / fizik tedavi / diyetisyen / muayenehane)
-- [x] **EstateOS** `/demos/estate-os` — navy/gold (serif); portföy/ilanlar, lead pipeline,
+- [x] **EstateOS** `/demos/estate-os` — navy/gold (serif); portföy/ilanlar, satış süreci,
       danışman görevleri, komisyon
 - [x] **RestaurantOS** `/demos/restaurant-os` — dark/amber (serif); masa durumu grid, QR dijital
       menü (telefon çerçevesi), online sipariş, popüler ürünler, Google yorum CTA
@@ -114,6 +114,35 @@ the dark `(site)` group, own theme, back-to-portfolio ribbon, sticky WhatsApp, f
       themes (Beauty/Clinic); revenue values de-ambiguated (e.g. `₺18.600`)
 - [x] Old routes 301-redirect (`vercel.json`), `sitemap.ts` updated; `DemoDetail.tsx` + `Mockups.tsx`
       removed; built with `next build` — all 21 routes static (incl. OG images), 0 TS errors
+
+### Interactive product prototypes — demos that feel like real SaaS (2026-06-29)
+Approved visuals kept 1:1; an interactive layer was added on top so a business owner
+sees "this is how my business would actually work". Local React state only — no backend.
+- [x] Shared interaction kit — `components/demos/kit/interactive.tsx`: toast system
+      (`DemoToastProvider`/`useDemoToast`), animated `DemoModal` + `ConfirmDialog`, `Tabs`,
+      `DemoCounter` (animated number), `Skeleton`, `SearchInput`/`TextField`/`SelectField`,
+      `FilterChips`, `DemoActionButton`, `IconButton`. Toast provider wired into `DemoShell`;
+      `StatTile` value now `ReactNode` so stats animate.
+- [x] **Kuaför OS** — complete/cancel/restore randevu (confirm dialog), reassign personel + move
+      saat via detail modal, add/search/filter müşteri, live animated gelir/doluluk, popular
+      services recompute, toasts on every action.
+- [x] **Beauty Center CRM** — paket **Seans Kullan** consumes a session (Donut/Bar animate, gelir
+      rises, "yenileme" prompt at full), müşteri kartı modal, randevu ekle/complete/cancel,
+      işlem filter + search, WhatsApp reminder simulation.
+- [x] **ClinicOS** — branş/hekim filter, hasta profili modal with **Tabs** (Bilgiler/Geçmiş/Ödemeler),
+      "Geldi"/"Tamamla" status, "Tahsil Et" moves ödeme Bekliyor→Ödendi (tahsilat animates),
+      "Muayeneye Al" clears bekleyen hasta, move randevu in modal.
+- [x] **EstateOS** — real **Satış Süreci Kanban** (Yeni Başvuru → İlk Görüşme → Teklif Hazırlandı →
+      Sözleşme → Tamamlandı) with framer-motion card moves; reaching Tamamlandı adds komisyon
+      (animated). İlan search + tür/danışman filter, ilan & müşteri-adayı detail modals.
+- [x] **RestaurantOS** — QR menü basket with +/- qty + live total → "Sipariş Ver" creates a kitchen
+      order; masa durumu cycles Boş→Dolu→Rezerve (counts update); online sipariş advances
+      Yeni→Hazırlanıyor→Hazır→Servis (ciro rises); rezervasyon status toggles.
+- [x] Turkish glossary applied to visible UI (Lead→Müşteri Adayı, Pipeline→Satış Süreci,
+      Stage→Aşama, Listing→İlan, etc.); brand acronyms (CRM/OS/QR/WhatsApp) kept.
+- [x] Homepage navbar: "CB" monogram replaced with the real profile photo (`/assets/cenk-profile.webp`).
+- [x] Micro-interactions throughout: hover states, animated counters, toast notifications, modal
+      animations, confirm dialogs, search/filter, empty states. Build: 21 routes static, 0 TS errors.
 
 ---
 

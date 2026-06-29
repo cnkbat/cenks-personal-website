@@ -51,9 +51,13 @@ export function Navbar() {
             className="group flex items-center gap-2.5"
             aria-label="Cenk Emir Bat — home"
           >
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[linear-gradient(135deg,#7c5cff,#22d3ee)] text-sm font-bold text-white shadow-[0_8px_24px_-8px_rgba(124,92,255,0.8)]">
-              CB
-            </span>
+            <img
+              src="/assets/cenk-profile.webp"
+              alt="Cenk Emir Bat"
+              width={36}
+              height={36}
+              className="h-9 w-9 rounded-xl object-cover shadow-[0_8px_24px_-8px_rgba(124,92,255,0.8)] ring-1 ring-white/15 transition-transform group-hover:scale-[1.04]"
+            />
             <span className="hidden text-[15px] font-semibold tracking-tight text-white sm:block">
               Cenk Emir Bat
             </span>

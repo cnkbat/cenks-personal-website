@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 
 import {
   Bell,
   CalendarCheck,
+  Check,
   ChefHat,
   Clock,
   Coffee,
@@ -12,8 +14,11 @@ import {
   LayoutDashboard,
   MessageCircle,
   Megaphone,
+  Minus,
+  Plus,
   QrCode,
   Salad,
+  Send,
   Star,
   TrendingUp,
   UtensilsCrossed,
@@ -22,11 +27,13 @@ import {
 import {
   Bar,
   BrowserFrame,
+  DemoCounter,
   DemoHero,
   DemoShell,
   DemoStage,
   FeatureGrid,
   FinalCTA,
+  IconButton,
   Panel,
   PhoneFrame,
   PricingCards,
@@ -38,6 +45,7 @@ import {
   StatTile,
   Tag,
   demoThemes,
+  useDemoToast,
 } from "@/components/demos/kit";
 
 /* --------------------------- demo data --------------------------- */
@@ -129,22 +137,60 @@ const MENU: { cat: string; items: { name: string; desc: string; price: number }[
   },
 ];
 
-const fmtTRY = (n: number) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+const fmtTRY = (n: number) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 
-const POPULAR = [
-  { name: "Izgara Köfte", count: 64, price: "₺420" },
-  { name: "Cheeseburger", count: 51, price: "₺320" },
-  { name: "Serpme Kahvaltı", count: 38, price: "₺680" },
-  { name: "Latte", count: 33, price: "₺110" },
-  { name: "San Sebastian", count: 27, price: "₺180" },
+/* kitchen order lifecycle */
+type OrderStatus = "Yeni" | "Hazırlanıyor" | "Hazır" | "Servis edildi";
+const ORDER_FLOW: OrderStatus[] = ["Yeni", "Hazırlanıyor", "Hazır", "Servis edildi"];
+const orderTone: Record<OrderStatus, "accent" | "warn" | "success"> = {
+  Yeni: "accent",
+  Hazırlanıyor: "warn",
+  Hazır: "warn",
+  "Servis edildi": "success",
+};
+const orderNext: Record<OrderStatus, string> = {
+  Yeni: "Hazırlığa al",
+  Hazırlanıyor: "Hazır işaretle",
+  Hazır: "Servis et",
+  "Servis edildi": "Tamamlandı",
+};
+
+type Order = {
+  code: string;
+  channel: string;
+  items: string;
+  total: number;
+  status: OrderStatus;
+};
+
+const INITIAL_ORDERS: Order[] = [
+  { code: "#4821", channel: "Getir", items: "2x Burger · 1x Patates", total: 740, status: "Hazırlanıyor" },
+  { code: "#4820", channel: "Yemeksepeti", items: "1x Makarna · 1x Salata", total: 520, status: "Yeni" },
+  { code: "#4819", channel: "QR Masa M5", items: "6x İçecek · 3x Tatlı", total: 1140, status: "Hazır" },
+  { code: "#4818", channel: "Trendyol", items: "1x Köfte Menü", total: 480, status: "Servis edildi" },
 ];
 
-const ONLINE_ORDERS = [
-  { code: "#4821", channel: "Getir", items: "2x Burger · 1x Patates", total: "₺740", tone: "warn" as const, label: "Hazırlanıyor" },
-  { code: "#4820", channel: "Yemeksepeti", items: "1x Makarna · 1x Salata", total: "₺520", tone: "accent" as const, label: "Yeni" },
-  { code: "#4819", channel: "QR Masa M5", items: "6x İçecek · 3x Tatlı", total: "₺1.140", tone: "success" as const, label: "Servis edildi" },
-  { code: "#4818", channel: "Trendyol", items: "1x Köfte Menü", total: "₺480", tone: "success" as const, label: "Yola çıktı" },
+const INITIAL_POPULAR: { name: string; count: number; price: number }[] = [
+  { name: "Izgara Köfte", count: 64, price: 420 },
+  { name: "Cheeseburger", count: 51, price: 320 },
+  { name: "Serpme Kahvaltı", count: 38, price: 680 },
+  { name: "Latte", count: 33, price: 110 },
+  { name: "San Sebastian", count: 27, price: 180 },
 ];
+
+/* today's reservations */
+type ResStatus = "Onaylı" | "Bekliyor";
+type Reservation = { id: number; time: string; name: string; people: string };
+const INITIAL_RESERVATIONS: { res: Reservation; status: ResStatus }[] = [
+  { res: { id: 1, time: "19:30", name: "Yıldız Ailesi", people: "4 kişi · Teras" }, status: "Onaylı" },
+  { res: { id: 2, time: "20:00", name: "Demir Bey", people: "2 kişi · Salon" }, status: "Bekliyor" },
+  { res: { id: 3, time: "20:30", name: "Kaya Grubu", people: "6 kişi · Salon" }, status: "Onaylı" },
+  { res: { id: 4, time: "21:15", name: "Şahin Çift", people: "2 kişi · Teras" }, status: "Bekliyor" },
+];
+const resTone: Record<ResStatus, "success" | "warn"> = {
+  Onaylı: "success",
+  Bekliyor: "warn",
+};
 
 const PROBLEMS = [
   "Menü değişiklikleri matbaaya bağlı; fiyat güncellemek günler sürüyor, eski menüler dolaşımda kalıyor.",
@@ -226,10 +272,160 @@ const SCENARIO_STEPS = [
 ];
 
 /* --------------------------- the dashboard mockup --------------------------- */
+const BASE_CIRO = 48700;
+
 function RestaurantPanel() {
+  const toast = useDemoToast();
+
+  /* ---- live state ---- */
+  const [tables, setTables] = useState(TABLES);
   const [activeCat, setActiveCat] = useState(MENU[0].cat);
+  const [basket, setBasket] = useState<Record<string, number>>({});
+  const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
+  const [popular, setPopular] = useState(INITIAL_POPULAR);
+  const [reservations, setReservations] = useState(INITIAL_RESERVATIONS);
+  const [extraCiro, setExtraCiro] = useState(0);
+  const [orderSeq, setOrderSeq] = useState(4822);
+
   const activeItems = MENU.find((m) => m.cat === activeCat)!.items;
-  const cartTotal = activeItems.reduce((sum, it) => sum + it.price, 0);
+
+  /* ---- derived, live stats ---- */
+  const aktifMasa = useMemo(() => tables.filter((t) => t.state !== "Boş").length, [tables]);
+  const counts = useMemo(() => {
+    const c: Record<TableState, number> = { Boş: 0, Dolu: 0, Rezerve: 0 };
+    tables.forEach((t) => (c[t.state] += 1));
+    return c;
+  }, [tables]);
+
+  const basketCount = useMemo(
+    () => Object.values(basket).reduce((s, n) => s + n, 0),
+    [basket],
+  );
+  const basketTotal = useMemo(
+    () =>
+      MENU.flatMap((m) => m.items).reduce(
+        (s, it) => s + (basket[it.name] ?? 0) * it.price,
+        0,
+      ),
+    [basket],
+  );
+
+  const ciro = BASE_CIRO + extraCiro;
+  const onlineCount = orders.length;
+  const rezCount = reservations.length;
+  const maxPopular = Math.max(1, ...popular.map((p) => p.count));
+
+  /* ---- table actions ---- */
+  function cycleTable(no: string) {
+    setTables((prev) =>
+      prev.map((t) => {
+        if (t.no !== no) return t;
+        const order: TableState[] = ["Boş", "Dolu", "Rezerve"];
+        const next = order[(order.indexOf(t.state) + 1) % order.length];
+        const info =
+          next === "Boş" ? "Hazır" : next === "Dolu" ? "Yeni · 0 dk" : "Rezerve · bekliyor";
+        return { ...t, state: next, info };
+      }),
+    );
+    const t = tables.find((x) => x.no === no);
+    if (t) {
+      const order: TableState[] = ["Boş", "Dolu", "Rezerve"];
+      const next = order[(order.indexOf(t.state) + 1) % order.length];
+      toast({
+        title: `Masa ${no} · ${next}`,
+        tone: next === "Boş" ? "success" : next === "Dolu" ? "danger" : "warn",
+        icon: UtensilsCrossed,
+      });
+    }
+  }
+
+  /* ---- basket actions ---- */
+  function addToBasket(name: string) {
+    setBasket((b) => ({ ...b, [name]: (b[name] ?? 0) + 1 }));
+  }
+  function removeFromBasket(name: string) {
+    setBasket((b) => {
+      const next = (b[name] ?? 0) - 1;
+      const copy = { ...b };
+      if (next <= 0) delete copy[name];
+      else copy[name] = next;
+      return copy;
+    });
+  }
+  function placeOrder() {
+    if (basketCount === 0) {
+      toast({ title: "Sepet boş", desc: "Önce ürün ekleyin", tone: "warn", icon: CreditCard });
+      return;
+    }
+    const lines = Object.entries(basket)
+      .map(([name, qty]) => `${qty}x ${name.split(" ")[0]}`)
+      .join(" · ");
+    const code = `#${orderSeq}`;
+    const newOrder: Order = {
+      code,
+      channel: "QR Masa M5",
+      items: lines,
+      total: basketTotal,
+      status: "Yeni",
+    };
+    setOrders((prev) => [newOrder, ...prev]);
+    setOrderSeq((s) => s + 1);
+    /* reflect ordered quantities in popular bars */
+    setPopular((prev) =>
+      prev.map((p) => {
+        const matched = Object.entries(basket).find(([name]) =>
+          name.toLocaleLowerCase("tr").includes(p.name.toLocaleLowerCase("tr").split(" ")[0]),
+        );
+        return matched ? { ...p, count: p.count + matched[1] } : p;
+      }),
+    );
+    toast({
+      title: "Sipariş mutfağa iletildi",
+      desc: `${code} · ${basketCount} ürün · ₺${fmtTRY(basketTotal)}`,
+      tone: "success",
+      icon: Check,
+    });
+    setBasket({});
+  }
+
+  /* ---- kitchen order actions ---- */
+  function advanceOrder(code: string) {
+    setOrders((prev) =>
+      prev.map((o) => {
+        if (o.code !== code || o.status === "Servis edildi") return o;
+        const next = ORDER_FLOW[ORDER_FLOW.indexOf(o.status) + 1];
+        if (next === "Servis edildi") {
+          setExtraCiro((c) => c + o.total);
+          toast({
+            title: `${code} servis edildi`,
+            desc: `+₺${fmtTRY(o.total)} ciroya eklendi`,
+            tone: "success",
+            icon: Check,
+          });
+        } else {
+          toast({ title: `${code} · ${next}`, tone: "default", icon: ChefHat });
+        }
+        return { ...o, status: next };
+      }),
+    );
+  }
+
+  /* ---- reservation actions ---- */
+  function toggleReservation(id: number) {
+    setReservations((prev) =>
+      prev.map((r) => {
+        if (r.res.id !== id) return r;
+        const status: ResStatus = r.status === "Onaylı" ? "Bekliyor" : "Onaylı";
+        toast({
+          title: `${r.res.name} · ${status}`,
+          tone: status === "Onaylı" ? "success" : "warn",
+          icon: CalendarCheck,
+        });
+        return { ...r, status };
+      }),
+    );
+  }
+
   return (
     <BrowserFrame url="restaurantos.app/pano">
       <div className="grid gap-3 lg:grid-cols-[180px_1fr]">
@@ -268,45 +464,85 @@ function RestaurantPanel() {
         <div className="space-y-3">
           {/* stats */}
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <StatTile label="Bugünkü Ciro" value="₺48.700" delta="+22%" icon={Wallet} />
-            <StatTile label="Aktif Masa" value="8/12" delta="+3" icon={UtensilsCrossed} />
-            <StatTile label="Online Sipariş" value="37" delta="+11" icon={CreditCard} />
-            <StatTile label="Rezervasyon" value="9" delta="+2" icon={CalendarCheck} />
+            <StatTile
+              label="Bugünkü Ciro"
+              value={<DemoCounter value={ciro} format={(n) => `₺${fmtTRY(n)}`} />}
+              delta="+22%"
+              icon={Wallet}
+            />
+            <StatTile
+              label="Aktif Masa"
+              value={
+                <span>
+                  <DemoCounter value={aktifMasa} />
+                  <span className="text-[var(--d-faint)]">/{tables.length}</span>
+                </span>
+              }
+              delta="+3"
+              icon={UtensilsCrossed}
+            />
+            <StatTile
+              label="Online Sipariş"
+              value={<DemoCounter value={onlineCount} />}
+              delta="+11"
+              icon={CreditCard}
+            />
+            <StatTile
+              label="Rezervasyon"
+              value={<DemoCounter value={rezCount} />}
+              delta="+2"
+              icon={CalendarCheck}
+            />
           </div>
 
           {/* table grid + qr menu phone */}
           <div className="grid gap-3 lg:grid-cols-[1.35fr_1fr]">
-            <Panel
-              title="Masa Durumu"
-              action="Salon + Teras"
-            >
+            <Panel title="Masa Durumu" action="Dokun · durumu değiştir">
               <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-                {TABLES.map((t) => (
-                  <div
+                {tables.map((t) => (
+                  <button
                     key={t.no}
-                    className="rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] p-2.5"
+                    type="button"
+                    onClick={() => cycleTable(t.no)}
+                    className="rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] p-2.5 text-left transition-all hover:border-[var(--d-accent)]/50 active:scale-[0.97]"
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-[12px] font-bold text-[var(--d-fg)]">
                         {t.no}
                       </span>
-                      <Tag tone={tableTone[t.state]}>{t.state}</Tag>
+                      <motion.span
+                        key={t.state}
+                        initial={{ scale: 0.6, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                      >
+                        <Tag tone={tableTone[t.state]}>{t.state}</Tag>
+                      </motion.span>
                     </div>
                     <div className="mt-1.5 truncate text-[10px] text-[var(--d-faint)]">
                       {t.info}
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-3 text-[10px] text-[var(--d-muted)]">
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-[var(--d-pos)]" /> Boş
+                  <span className="h-2 w-2 rounded-full bg-[var(--d-pos)]" /> Boş ·{" "}
+                  <span className="font-semibold text-[var(--d-fg)]">
+                    <DemoCounter value={counts["Boş"]} />
+                  </span>
                 </span>
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-[var(--d-neg)]" /> Dolu
+                  <span className="h-2 w-2 rounded-full bg-[var(--d-neg)]" /> Dolu ·{" "}
+                  <span className="font-semibold text-[var(--d-fg)]">
+                    <DemoCounter value={counts["Dolu"]} />
+                  </span>
                 </span>
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-[var(--d-warn)]" /> Rezerve
+                  <span className="h-2 w-2 rounded-full bg-[var(--d-warn)]" /> Rezerve ·{" "}
+                  <span className="font-semibold text-[var(--d-fg)]">
+                    <DemoCounter value={counts["Rezerve"]} />
+                  </span>
                 </span>
               </div>
             </Panel>
@@ -352,64 +588,156 @@ function RestaurantPanel() {
 
                 {/* menu items for the active category */}
                 <ul className="mt-3 space-y-2">
-                  {activeItems.map((m) => (
-                    <li
-                      key={m.name}
-                      className="flex items-center gap-2.5 rounded-xl border border-[var(--d-border)] bg-[var(--d-surface)] p-2"
-                    >
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--d-accent)]/12 text-[var(--d-accent)]">
-                        <Salad className="h-4 w-4" />
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-[11.5px] font-semibold text-[var(--d-fg)]">
-                          {m.name}
+                  {activeItems.map((m) => {
+                    const qty = basket[m.name] ?? 0;
+                    return (
+                      <li
+                        key={m.name}
+                        className={
+                          "flex items-center gap-2.5 rounded-xl border bg-[var(--d-surface)] p-2 transition-colors " +
+                          (qty > 0
+                            ? "border-[var(--d-accent)]/60"
+                            : "border-[var(--d-border)]")
+                        }
+                      >
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--d-accent)]/12 text-[var(--d-accent)]">
+                          <Salad className="h-4 w-4" />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-[11.5px] font-semibold text-[var(--d-fg)]">
+                            {m.name}
+                          </div>
+                          <div className="truncate text-[10px] text-[var(--d-faint)]">
+                            {m.desc}
+                          </div>
                         </div>
-                        <div className="truncate text-[10px] text-[var(--d-faint)]">
-                          {m.desc}
+                        <span className="text-[11.5px] font-bold text-[var(--d-accent)]">
+                          ₺{m.price}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          {qty > 0 && (
+                            <>
+                              <IconButton
+                                icon={Minus}
+                                label="Azalt"
+                                onClick={() => removeFromBasket(m.name)}
+                              />
+                              <motion.span
+                                key={qty}
+                                initial={{ scale: 0.5 }}
+                                animate={{ scale: 1 }}
+                                transition={{ duration: 0.2 }}
+                                className="w-4 text-center text-[12px] font-bold tabular-nums text-[var(--d-fg)]"
+                              >
+                                {qty}
+                              </motion.span>
+                            </>
+                          )}
+                          <IconButton
+                            icon={Plus}
+                            label="Ekle"
+                            tone="success"
+                            onClick={() => addToBasket(m.name)}
+                          />
                         </div>
-                      </div>
-                      <span className="text-[11.5px] font-bold text-[var(--d-accent)]">
-                        ₺{m.price}
-                      </span>
-                    </li>
-                  ))}
+                      </li>
+                    );
+                  })}
                 </ul>
 
-                <div className="mt-3 flex items-center justify-center gap-2 rounded-full bg-[var(--d-accent)] py-2 text-[11px] font-bold text-[var(--d-accent-fg)]">
-                  <CreditCard className="h-3.5 w-3.5" /> Sepete Ekle · ₺{fmtTRY(cartTotal)}
-                </div>
+                {/* live basket */}
+                <AnimatePresence initial={false}>
+                  {basketCount > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                      className="overflow-hidden"
+                    >
+                      <div className="mt-3 flex items-center justify-between rounded-xl bg-[var(--d-surface-2)] px-3 py-2 text-[11px]">
+                        <span className="inline-flex items-center gap-1.5 text-[var(--d-muted)]">
+                          <CreditCard className="h-3.5 w-3.5 text-[var(--d-accent)]" /> Sepet ·{" "}
+                          <span className="font-semibold text-[var(--d-fg)]">
+                            <DemoCounter value={basketCount} /> ürün
+                          </span>
+                        </span>
+                        <span className="font-bold text-[var(--d-accent)]">
+                          ₺<DemoCounter value={basketTotal} format={(n) => fmtTRY(n)} />
+                        </span>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <button
+                  type="button"
+                  onClick={placeOrder}
+                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-[var(--d-accent)] py-2 text-[11px] font-bold text-[var(--d-accent-fg)] transition-all hover:brightness-105 active:scale-[0.98] disabled:opacity-50"
+                  disabled={basketCount === 0}
+                >
+                  <Send className="h-3.5 w-3.5" /> Sipariş Ver
+                  {basketCount > 0 && (
+                    <>
+                      {" · ₺"}
+                      <DemoCounter value={basketTotal} format={(n) => fmtTRY(n)} />
+                    </>
+                  )}
+                </button>
               </div>
             </PhoneFrame>
           </div>
 
           {/* orders + popular + sales */}
           <div className="grid gap-3 lg:grid-cols-[1.2fr_1fr]">
-            <Panel title="Online Siparişler" action="Canlı">
+            <Panel title="Online Siparişler" action="Mutfak · Canlı">
               <ul className="space-y-2">
-                {ONLINE_ORDERS.map((o) => (
-                  <li
-                    key={o.code}
-                    className="flex items-center gap-3 rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] px-3 py-2.5"
-                  >
-                    <span className="w-12 shrink-0 text-[12px] font-semibold tabular-nums text-[var(--d-accent)]">
-                      {o.code}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-[12.5px] font-medium text-[var(--d-fg)]">
-                        {o.channel}
-                      </div>
-                      <div className="truncate text-[11px] text-[var(--d-faint)]">
-                        {o.items}
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-end gap-1">
-                      <span className="text-[12px] font-bold text-[var(--d-fg)]">
-                        {o.total}
-                      </span>
-                      <Tag tone={o.tone}>{o.label}</Tag>
-                    </div>
-                  </li>
-                ))}
+                <AnimatePresence initial={false}>
+                  {orders.map((o) => {
+                    const done = o.status === "Servis edildi";
+                    return (
+                      <motion.li
+                        key={o.code}
+                        layout
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                        className="flex items-center gap-3 rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] px-3 py-2.5"
+                      >
+                        <span className="w-12 shrink-0 text-[12px] font-semibold tabular-nums text-[var(--d-accent)]">
+                          {o.code}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-[12.5px] font-medium text-[var(--d-fg)]">
+                            {o.channel}
+                          </div>
+                          <div className="truncate text-[11px] text-[var(--d-faint)]">
+                            {o.items}
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-1.5">
+                          <span className="text-[12px] font-bold text-[var(--d-fg)]">
+                            ₺{fmtTRY(o.total)}
+                          </span>
+                          {done ? (
+                            <Tag tone={orderTone[o.status]}>
+                              <Check className="h-2.5 w-2.5" /> {o.status}
+                            </Tag>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => advanceOrder(o.code)}
+                              className="inline-flex items-center gap-1 rounded-full bg-[var(--d-accent)]/15 px-2 py-0.5 text-[10px] font-semibold text-[var(--d-accent)] transition-colors hover:bg-[var(--d-accent)]/25"
+                            >
+                              <ChefHat className="h-2.5 w-2.5" /> {o.status} → {orderNext[o.status]}
+                            </button>
+                          )}
+                        </div>
+                      </motion.li>
+                    );
+                  })}
+                </AnimatePresence>
               </ul>
             </Panel>
 
@@ -417,7 +745,9 @@ function RestaurantPanel() {
               <Panel title="Günlük Satış">
                 <div className="flex items-end justify-between">
                   <div>
-                    <div className="text-2xl font-bold text-[var(--d-fg)]">₺48.700</div>
+                    <div className="text-2xl font-bold text-[var(--d-fg)]">
+                      ₺<DemoCounter value={ciro} format={(n) => fmtTRY(n)} />
+                    </div>
                     <div className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--d-pos)]">
                       <TrendingUp className="h-3 w-3" /> dün bu saate göre +22%
                     </div>
@@ -430,23 +760,69 @@ function RestaurantPanel() {
                 </div>
               </Panel>
 
-              <Panel title="Popüler Ürünler" action="Bugün">
+              <Panel title="Popüler Ürünler" action="Bugün · Canlı">
                 <ul className="space-y-2.5">
-                  {POPULAR.slice(0, 4).map((p) => (
+                  {popular.slice(0, 4).map((p) => (
                     <li key={p.name}>
                       <div className="flex items-center justify-between text-[12px]">
                         <span className="text-[var(--d-muted)]">{p.name}</span>
                         <span className="font-semibold text-[var(--d-fg)]">
-                          {p.count} · {p.price}
+                          <DemoCounter value={p.count} /> · ₺{p.price}
                         </span>
                       </div>
-                      <Bar value={(p.count / 64) * 100} className="mt-1" />
+                      <Bar value={(p.count / maxPopular) * 100} className="mt-1" />
                     </li>
                   ))}
                 </ul>
               </Panel>
             </div>
           </div>
+
+          {/* today's reservations — toggle status */}
+          <Panel title="Bugünkü Rezervasyonlar" action="Dokun · onay durumu">
+            <ul className="grid gap-2 sm:grid-cols-2">
+              {reservations.map((r) => (
+                <li
+                  key={r.res.id}
+                  className="flex items-center gap-3 rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] px-3 py-2.5"
+                >
+                  <span className="w-11 shrink-0 text-[12px] font-semibold tabular-nums text-[var(--d-accent)]">
+                    {r.res.time}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-[12.5px] font-medium text-[var(--d-fg)]">
+                      {r.res.name}
+                    </div>
+                    <div className="truncate text-[11px] text-[var(--d-faint)]">
+                      {r.res.people}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => toggleReservation(r.res.id)}
+                    aria-label="Durumu değiştir"
+                    className="transition-transform active:scale-95"
+                  >
+                    <motion.span
+                      key={r.status}
+                      initial={{ scale: 0.6, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                    >
+                      <Tag tone={resTone[r.status]}>
+                        {r.status === "Onaylı" ? (
+                          <Check className="h-2.5 w-2.5" />
+                        ) : (
+                          <Clock className="h-2.5 w-2.5" />
+                        )}
+                        {r.status}
+                      </Tag>
+                    </motion.span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </Panel>
 
           {/* google review + campaign */}
           <div className="grid gap-3 lg:grid-cols-2">
@@ -477,9 +853,20 @@ function RestaurantPanel() {
                   </span>
                   Ayşe Hanım'a teşekkür mesajı + yorum linki
                 </span>
-                <span className="rounded-full bg-[var(--d-accent)] px-2.5 py-1 text-[10px] font-bold text-[var(--d-accent-fg)]">
+                <button
+                  type="button"
+                  onClick={() =>
+                    toast({
+                      title: "Yorum linki gönderildi",
+                      desc: "Ayşe Hanım'a WhatsApp ile Google yorum linki iletildi",
+                      tone: "success",
+                      icon: MessageCircle,
+                    })
+                  }
+                  className="rounded-full bg-[var(--d-accent)] px-2.5 py-1 text-[10px] font-bold text-[var(--d-accent-fg)] transition-transform hover:scale-[1.04] active:scale-95"
+                >
                   Yorum İste
-                </span>
+                </button>
               </div>
             </Panel>
 

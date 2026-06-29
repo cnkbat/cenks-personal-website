@@ -268,10 +268,10 @@ export const dictionaries: Record<Locale, Dictionary> = {
           status: "new",
           href: "/demos/estate-os",
           value:
-            "Portföy, ilanlar, müşteri ve lead'leri tek platformda yöneten emlak işletme sistemi.",
+            "Portföy, ilanlar, müşteriler ve satış sürecini tek platformda yöneten emlak işletme sistemi.",
           features: [
             "Portföy ve ilan yönetimi",
-            "Lead pipeline takibi",
+            "Satış süreci takibi",
             "Komisyon ve danışman paneli",
           ],
           image: "/assets/real-estate-preview.webp",

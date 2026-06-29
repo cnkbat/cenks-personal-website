@@ -1,11 +1,15 @@
 "use client";
 
+import { useMemo, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Banknote,
   Bell,
   Building2,
   CalendarClock,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   ClipboardList,
   Filter,
   Home,
@@ -14,8 +18,10 @@ import {
   MapPin,
   MessageCircle,
   Phone,
+  Ruler,
   Star,
   TrendingUp,
+  User,
   Users,
   Wallet,
 } from "lucide-react";
@@ -23,27 +29,58 @@ import {
   Avatar,
   Bar,
   BrowserFrame,
+  ConfirmDialog,
+  DemoActionButton,
+  DemoCounter,
   DemoHero,
+  DemoModal,
   DemoShell,
   DemoStage,
   FeatureGrid,
+  FilterChips,
   FinalCTA,
-  MiniBars,
+  IconButton,
   Panel,
   PricingCards,
   ProblemSection,
   Scenario,
+  SearchInput,
   Section,
   SolutionSection,
   Sparkline,
   StatTile,
   Tag,
   demoThemes,
+  useDemoToast,
 } from "@/components/demos/kit";
 
+const fmtTRY = (n: number) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+const ease = [0.22, 1, 0.36, 1] as const;
+
 /* --------------------------- demo data --------------------------- */
-const LISTINGS = [
+const AGENTS = ["Cem Yılmaz", "Deniz Ak", "Pınar Öz"] as const;
+const THUMB = "/demos/estate/apartment-interior.webp";
+
+type ListingType = "Satılık Daire" | "Kiralık Daire" | "Villa" | "Arsa" | "Ticari";
+type ListingStatus = "Satılık" | "Kiralık" | "Satıldı";
+
+type Listing = {
+  id: number;
+  title: string;
+  type: ListingType;
+  district: string;
+  price: string;
+  rooms: string;
+  area: string;
+  agent: (typeof AGENTS)[number];
+  tone: "accent" | "success" | "soft";
+  label: ListingStatus;
+  image: string;
+};
+
+const LISTINGS: Listing[] = [
   {
+    id: 1,
     title: "Bağdat Caddesi Lüks Daire",
     type: "Satılık Daire",
     district: "Kadıköy",
@@ -51,11 +88,12 @@ const LISTINGS = [
     rooms: "3+1",
     area: "145 m²",
     agent: "Cem Yılmaz",
-    tone: "accent" as const,
+    tone: "accent",
     label: "Satılık",
-    image: "/demos/estate/apartment-interior.webp",
+    image: THUMB,
   },
   {
+    id: 2,
     title: "Deniz Manzaralı Villa",
     type: "Villa",
     district: "Beşiktaş",
@@ -63,10 +101,12 @@ const LISTINGS = [
     rooms: "5+2",
     area: "420 m²",
     agent: "Deniz Ak",
-    tone: "accent" as const,
+    tone: "accent",
     label: "Satılık",
+    image: THUMB,
   },
   {
+    id: 3,
     title: "Çankaya Eşyalı Rezidans",
     type: "Kiralık Daire",
     district: "Çankaya",
@@ -74,10 +114,12 @@ const LISTINGS = [
     rooms: "2+1",
     area: "98 m²",
     agent: "Pınar Öz",
-    tone: "success" as const,
+    tone: "success",
     label: "Kiralık",
+    image: THUMB,
   },
   {
+    id: 4,
     title: "Merkezi Ticari Mağaza",
     type: "Ticari",
     district: "Kadıköy",
@@ -85,23 +127,85 @@ const LISTINGS = [
     rooms: "Dükkan",
     area: "120 m²",
     agent: "Cem Yılmaz",
-    tone: "soft" as const,
+    tone: "soft",
     label: "Satıldı",
+    image: THUMB,
+  },
+  {
+    id: 5,
+    title: "Göktürk Arsa (İmarlı)",
+    type: "Arsa",
+    district: "Beşiktaş",
+    price: "₺6.900.000",
+    rooms: "Arsa",
+    area: "640 m²",
+    agent: "Deniz Ak",
+    tone: "accent",
+    label: "Satılık",
+    image: THUMB,
+  },
+  {
+    id: 6,
+    title: "Moda Bahçeli Kiralık Daire",
+    type: "Kiralık Daire",
+    district: "Kadıköy",
+    price: "₺42.000/ay",
+    rooms: "4+1",
+    area: "165 m²",
+    agent: "Pınar Öz",
+    tone: "success",
+    label: "Kiralık",
+    image: THUMB,
   },
 ];
 
-const PIPELINE = [
-  { stage: "Yeni", count: 24, tone: "accent" as const, hint: "Bu hafta gelen" },
-  { stage: "Görüşme", count: 13, tone: "warn" as const, hint: "Telefon / ziyaret" },
-  { stage: "Teklif", count: 7, tone: "accent" as const, hint: "Pazarlık aşaması" },
-  { stage: "Kapandı", count: 4, tone: "success" as const, hint: "Bu ay imzalanan" },
+const LISTING_FILTERS: { id: string; label: string }[] = [
+  { id: "all", label: "Tümü" },
+  { id: "Satılık Daire", label: "Satılık Daire" },
+  { id: "Kiralık Daire", label: "Kiralık Daire" },
+  { id: "Villa", label: "Villa" },
+  { id: "Arsa", label: "Arsa" },
+  { id: "Ticari", label: "Ticari" },
+];
+
+/* --- Satış Süreci (Kanban) --- */
+const STAGES = [
+  { id: "yeni", label: "Yeni Başvuru" },
+  { id: "gorusme", label: "İlk Görüşme" },
+  { id: "teklif", label: "Teklif Hazırlandı" },
+  { id: "sozlesme", label: "Sözleşme" },
+  { id: "tamamlandi", label: "Tamamlandı" },
+] as const;
+
+type StageId = (typeof STAGES)[number]["id"];
+
+type Lead = {
+  id: number;
+  name: string;
+  phone: string;
+  interest: string;
+  budget: number;
+  agent: (typeof AGENTS)[number];
+  stage: StageId;
+  commission: number;
+  notes: string;
+};
+
+const INITIAL_LEADS: Lead[] = [
+  { id: 1, name: "Selin Aydın", phone: "0532 111 22 33", interest: "Bağdat Caddesi · 3+1 Satılık", budget: 8500000, agent: "Cem Yılmaz", stage: "yeni", commission: 254000, notes: "Sahibinden ilanından geldi, peşin alıcı." },
+  { id: 2, name: "Murat Kılıç", phone: "0533 222 33 44", interest: "Deniz Manzaralı Villa", budget: 25000000, agent: "Deniz Ak", stage: "gorusme", commission: 747000, notes: "Hafta sonu yerinde gösterim istedi." },
+  { id: 3, name: "Ayşe Demir", phone: "0535 333 44 55", interest: "Çankaya Kiralık · 2+1", budget: 30000, agent: "Pınar Öz", stage: "gorusme", commission: 28500, notes: "Eşyalı tercih ediyor, hızlı taşınacak." },
+  { id: 4, name: "Kerem Şahin", phone: "0536 444 55 66", interest: "Göktürk Arsa (İmarlı)", budget: 7000000, agent: "Deniz Ak", stage: "teklif", commission: 207000, notes: "İmar durumu evrakı bekleniyor." },
+  { id: 5, name: "Elif Yıldız", phone: "0537 555 66 77", interest: "Merkezi Ticari Mağaza", budget: 4250000, agent: "Cem Yılmaz", stage: "teklif", commission: 127500, notes: "Pazarlık ₺4M seviyesinde." },
+  { id: 6, name: "Burak Aslan", phone: "0538 666 77 88", interest: "Moda Bahçeli · 4+1 Kiralık", budget: 42000, agent: "Pınar Öz", stage: "sozlesme", commission: 42000, notes: "Kira sözleşmesi imzaya hazır." },
+  { id: 7, name: "Zeynep Kaya", phone: "0539 777 88 99", interest: "Bağdat Caddesi · 3+1 Satılık", budget: 8200000, agent: "Cem Yılmaz", stage: "yeni", commission: 246000, notes: "Kredi ön onayı mevcut." },
 ];
 
 const TASKS = [
   { agent: "Cem Yılmaz", text: "Kadıköy dairesi için ekspertiz randevusu", due: "Bugün 14:00", tone: "warn" as const, label: "Bugün" },
   { agent: "Deniz Ak", text: "Villa müşterisine teklif evrakı gönder", due: "Yarın 11:00", tone: "accent" as const, label: "Yarın" },
   { agent: "Pınar Öz", text: "Çankaya kiralık için kira sözleşmesi", due: "Bugün 17:30", tone: "warn" as const, label: "Bugün" },
-  { agent: "Cem Yılmaz", text: "Yeni lead — geri arama planla", due: "Cuma 10:00", tone: "soft" as const, label: "Planlı" },
+  { agent: "Cem Yılmaz", text: "Yeni müşteri adayı — geri arama planla", due: "Cuma 10:00", tone: "soft" as const, label: "Planlı" },
 ];
 
 const TOP_AGENTS = [
@@ -112,8 +216,8 @@ const TOP_AGENTS = [
 
 const PROBLEMS = [
   "İlanlar Sahibinden, Instagram, vitrin ve defter arasında dağınık; hangi portföy güncel belli olmuyor.",
-  "Gelen müşteri görüşmeleri kayıt altına alınmıyor; bir danışman ayrılınca tüm lead'ler kayboluyor.",
-  "Hangi müşteri hangi aşamada (görüşme, teklif, kapanış) takip edilemiyor, sıcak lead'ler soğuyor.",
+  "Gelen müşteri görüşmeleri kayıt altına alınmıyor; bir danışman ayrılınca tüm müşteri adayları kayboluyor.",
+  "Hangi müşteri hangi aşamada (görüşme, teklif, kapanış) takip edilemiyor, sıcak fırsatlar soğuyor.",
   "Komisyon ve satış rakamları Excel'de tutuluyor; danışman performansı net görülemiyor.",
   "Geri arama ve ekspertiz randevuları unutuluyor; müşteri rakip ofise gidiyor.",
   "Portföydeki ev sahipleriyle iletişim kopuk; fiyat güncellemeleri zamanında yansımıyor.",
@@ -121,8 +225,8 @@ const PROBLEMS = [
 
 const SOLUTIONS = [
   { icon: Building2, title: "Merkezi Portföy Yönetimi", text: "Satılık, kiralık, villa, arsa ve ticari tüm ilanlar fotoğraf, fiyat ve durumuyla tek panelde toplanır." },
-  { icon: Users, title: "Lead & Müşteri Takibi", text: "Her gelen müşteri kaydedilir; Yeni → Görüşme → Teklif → Kapandı aşamalarıyla hiçbir fırsat kaçmaz." },
-  { icon: Bell, title: "Otomatik WhatsApp Lead Takibi", text: "Yeni lead geldiğinde danışmana bildirim, müşteriye otomatik karşılama; geri arama hatırlatması." },
+  { icon: Users, title: "Müşteri Adayı & Müşteri Takibi", text: "Her gelen müşteri kaydedilir; Yeni → Görüşme → Teklif → Kapandı aşamalarıyla hiçbir fırsat kaçmaz." },
+  { icon: Bell, title: "Otomatik WhatsApp Aday Takibi", text: "Yeni müşteri adayı geldiğinde danışmana bildirim, müşteriye otomatik karşılama; geri arama hatırlatması." },
   { icon: ClipboardList, title: "Danışman Görev Panosu", text: "Ekspertiz, evrak, sözleşme ve geri arama görevleri danışman bazında planlanır, hiçbiri unutulmaz." },
   { icon: Wallet, title: "Komisyon & Satış Raporu", text: "Aylık satış hacmi, kapanan işlem ve danışman komisyonları gerçek rakamlarla takip edilir." },
   { icon: KeyRound, title: "Ev Sahibi Portalı", text: "Mülk sahibi ilanının kaç kez görüntülendiğini, gelen teklifleri ve süreci şeffaf şekilde izler." },
@@ -131,8 +235,8 @@ const SOLUTIONS = [
 const FEATURES = [
   { icon: Building2, title: "Portföy & İlan Yönetimi", text: "Tüm gayrimenkulleri fotoğraf, konum ve durumla tek yerde yönetin." },
   { icon: Filter, title: "Akıllı Eşleştirme", text: "Müşteri kriterlerine uygun portföyü otomatik öneren filtre." },
-  { icon: Users, title: "Lead Pipeline (CRM)", text: "Aşama bazlı müşteri takibi; sıcak fırsatları öne çıkarın." },
-  { icon: Bell, title: "WhatsApp Lead Bildirimi", text: "Yeni lead ve geri arama hatırlatmaları anında danışmana gider." },
+  { icon: Users, title: "Satış Süreci (CRM)", text: "Aşama bazlı müşteri takibi; sıcak fırsatları öne çıkarın." },
+  { icon: Bell, title: "WhatsApp Aday Bildirimi", text: "Yeni müşteri adayı ve geri arama hatırlatmaları anında danışmana gider." },
   { icon: ClipboardList, title: "Görev & Randevu", text: "Ekspertiz, evrak ve sözleşme görevlerini takvimle planlayın." },
   { icon: Wallet, title: "Komisyon Takibi", text: "Danışman bazlı komisyon ve aylık satış hacmi raporu." },
   { icon: TrendingUp, title: "Performans Paneli", text: "En çok satan danışman, bölge ve ilan tipi analizi." },
@@ -148,7 +252,7 @@ const PLANS = [
     period: "/ özel teklif",
     features: [
       "Portföy & ilan yönetimi",
-      "Temel lead kaydı",
+      "Temel müşteri adayı kaydı",
       "WhatsApp ile müşteri iletişimi",
       "Mobil uyumlu ofis vitrini",
     ],
@@ -161,8 +265,8 @@ const PLANS = [
     highlighted: true,
     features: [
       "Başlangıç'taki her şey",
-      "Lead Pipeline (CRM) & aşama takibi",
-      "Otomatik WhatsApp lead bildirimi",
+      "Satış Süreci (CRM) & aşama takibi",
+      "Otomatik WhatsApp aday bildirimi",
       "Danışman görev panosu & randevular",
       "Komisyon & satış raporu",
     ],
@@ -183,14 +287,105 @@ const PLANS = [
 ];
 
 const SCENARIO_STEPS = [
-  { time: "09:00", text: "Cem Bey ofise gelir gelmez paneli açıyor; gece gelen 3 yeni lead'i, bekleyen teklifleri ve günün ekspertiz randevusunu tek bakışta görüyor." },
-  { time: "Gün içi", text: "Sahibinden ilanına gelen bir müşteri WhatsApp'tan yazıyor; lead otomatik pipeline'a 'Yeni' olarak düşüyor, danışmana anında bildirim gidiyor." },
-  { time: "Öğleden sonra", text: "Müşteri Bağdat Caddesi dairesini beğeniyor; Cem Bey lead'i 'Teklif' aşamasına taşıyor, sistem teklif evrakını ve geri arama görevini oluşturuyor." },
+  { time: "09:00", text: "Cem Bey ofise gelir gelmez paneli açıyor; gece gelen 3 yeni müşteri adayını, bekleyen teklifleri ve günün ekspertiz randevusunu tek bakışta görüyor." },
+  { time: "Gün içi", text: "Sahibinden ilanına gelen bir müşteri WhatsApp'tan yazıyor; müşteri adayı otomatik satış sürecine 'Yeni Başvuru' olarak düşüyor, danışmana anında bildirim gidiyor." },
+  { time: "Öğleden sonra", text: "Müşteri Bağdat Caddesi dairesini beğeniyor; Cem Bey adayı 'Teklif Hazırlandı' aşamasına taşıyor, sistem teklif evrakını ve geri arama görevini oluşturuyor." },
   { time: "Akşam", text: "Kapanışta yönetici panelden ayın satış hacmini, kapanan 4 işlemi ve danışman komisyonlarını rapordan görüyor; hiçbir şey Excel'e yazılmıyor." },
 ];
 
-/* --------------------------- the dashboard mockup --------------------------- */
+/* --------------------------- the interactive panel --------------------------- */
+const STAGE_TONE: Record<StageId, "accent" | "warn" | "success" | "soft"> = {
+  yeni: "accent",
+  gorusme: "warn",
+  teklif: "accent",
+  sozlesme: "soft",
+  tamamlandi: "success",
+};
+
+const stageLabel = (id: StageId) => STAGES.find((s) => s.id === id)?.label ?? id;
+
 function EstatePanel() {
+  const toast = useDemoToast();
+
+  /* kanban / satış süreci state */
+  const [leads, setLeads] = useState<Lead[]>(INITIAL_LEADS);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [completeLead, setCompleteLead] = useState<Lead | null>(null);
+
+  /* portföy state */
+  const [query, setQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [agentFilter, setAgentFilter] = useState<string>("Tümü");
+  const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
+
+  /* live, derived stats */
+  const activePortfolio = LISTINGS.filter((l) => l.label !== "Satıldı").length;
+  const baseCommission = 1240000;
+  const closedThisMonth = 4;
+
+  const closedLeads = useMemo(() => leads.filter((l) => l.stage === "tamamlandi"), [leads]);
+  const earnedCommission = useMemo(
+    () => closedLeads.reduce((s, l) => s + l.commission, 0),
+    [closedLeads],
+  );
+  const totalCommission = baseCommission + earnedCommission;
+  const monthSales = closedThisMonth + closedLeads.length;
+  const newLeads = useMemo(() => leads.filter((l) => l.stage === "yeni").length, [leads]);
+
+  const leadsByStage = useMemo(() => {
+    const map: Record<StageId, Lead[]> = {
+      yeni: [], gorusme: [], teklif: [], sozlesme: [], tamamlandi: [],
+    };
+    leads.forEach((l) => map[l.stage].push(l));
+    return map;
+  }, [leads]);
+
+  /* portföy filtering */
+  const visibleListings = useMemo(() => {
+    const q = query.trim().toLocaleLowerCase("tr");
+    return LISTINGS.filter((l) => {
+      if (typeFilter !== "all" && l.type !== typeFilter) return false;
+      if (agentFilter !== "Tümü" && l.agent !== agentFilter) return false;
+      if (!q) return true;
+      return (
+        l.title.toLocaleLowerCase("tr").includes(q) ||
+        l.district.toLocaleLowerCase("tr").includes(q) ||
+        l.type.toLocaleLowerCase("tr").includes(q)
+      );
+    });
+  }, [query, typeFilter, agentFilter]);
+
+  /* kanban actions */
+  function moveLead(lead: Lead, dir: -1 | 1) {
+    const idx = STAGES.findIndex((s) => s.id === lead.stage);
+    const next = idx + dir;
+    if (next < 0 || next >= STAGES.length) return;
+    const target = STAGES[next].id;
+    if (target === "tamamlandi") {
+      setCompleteLead(lead);
+      return;
+    }
+    setLeads((prev) => prev.map((l) => (l.id === lead.id ? { ...l, stage: target } : l)));
+    toast({
+      title: `${lead.name} taşındı`,
+      desc: `${stageLabel(target)} aşamasına alındı`,
+      tone: "default",
+    });
+  }
+
+  function confirmComplete() {
+    if (!completeLead) return;
+    const lead = completeLead;
+    setLeads((prev) => prev.map((l) => (l.id === lead.id ? { ...l, stage: "tamamlandi" } : l)));
+    toast({
+      title: "Satış tamamlandı",
+      desc: `+₺${fmtTRY(lead.commission)} komisyon eklendi`,
+      tone: "success",
+      icon: CheckCircle2,
+    });
+    setCompleteLead(null);
+  }
+
   return (
     <BrowserFrame url="estateos.app/pano">
       <div className="grid gap-3 lg:grid-cols-[190px_1fr]">
@@ -205,7 +400,7 @@ function EstatePanel() {
           {[
             { icon: LayoutDashboard, label: "Pano", active: true },
             { icon: Home, label: "Portföy" },
-            { icon: Users, label: "Lead'ler" },
+            { icon: Users, label: "Müşteri Adayları" },
             { icon: ClipboardList, label: "Görevler" },
             { icon: Wallet, label: "Komisyon" },
             { icon: MapPin, label: "Bölgeler" },
@@ -227,24 +422,49 @@ function EstatePanel() {
 
         {/* main */}
         <div className="space-y-3">
-          {/* stats */}
+          {/* live stats */}
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <StatTile label="Aktif Portföy" value="148" delta="+9" icon={Building2} />
-            <StatTile label="Bu Ay Satış" value="4" delta="+1" icon={KeyRound} />
-            <StatTile label="Toplam Komisyon" value="₺1.24M" delta="+22%" icon={Wallet} />
-            <StatTile label="Yeni Lead" value="24" delta="+6" icon={Users} />
+            <StatTile label="Aktif Portföy" value={<DemoCounter value={activePortfolio} />} delta="+9" icon={Building2} />
+            <StatTile label="Bu Ay Satış" value={<DemoCounter value={monthSales} />} delta="+1" icon={KeyRound} />
+            <StatTile
+              label="Toplam Komisyon"
+              value={<DemoCounter value={totalCommission} format={(n) => `₺${fmtTRY(n)}`} />}
+              delta="+22%"
+              icon={Wallet}
+            />
+            <StatTile label="Yeni Müşteri Adayı" value={<DemoCounter value={newLeads} />} delta="+6" icon={Users} />
           </div>
 
           <div className="grid gap-3 lg:grid-cols-[1.35fr_1fr]">
-            {/* portfolio / listings */}
-            <Panel title="Portföy / İlanlar" action="Tümü">
+            {/* portfolio / listings — interactive */}
+            <Panel title="Portföy / İlanlar" action={`${visibleListings.length} ilan`}>
+              <div className="mb-2.5 space-y-2">
+                <SearchInput value={query} onChange={setQuery} placeholder="İlan, bölge veya tür ara…" />
+                <FilterChips options={LISTING_FILTERS} value={typeFilter} onChange={setTypeFilter} />
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--d-faint)]">
+                    Danışman
+                  </span>
+                  <FilterChips
+                    options={["Tümü", ...AGENTS].map((a) => ({ id: a, label: a }))}
+                    value={agentFilter}
+                    onChange={setAgentFilter}
+                  />
+                </div>
+              </div>
               <ul className="space-y-2">
-                {LISTINGS.map((l) => (
-                  <li
-                    key={l.title}
-                    className="flex items-center gap-3 rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] p-2.5"
-                  >
-                    {l.image ? (
+                <AnimatePresence initial={false} mode="popLayout">
+                  {visibleListings.map((l) => (
+                    <motion.li
+                      key={l.id}
+                      layout
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      transition={{ duration: 0.25, ease }}
+                      onClick={() => setSelectedListing(l)}
+                      className="group flex cursor-pointer items-center gap-3 rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] p-2.5 transition-colors hover:border-[var(--d-accent)]/40"
+                    >
                       <img
                         src={l.image}
                         alt={l.title}
@@ -254,33 +474,34 @@ function EstatePanel() {
                         decoding="async"
                         className="h-12 w-14 shrink-0 rounded-lg border border-[var(--d-border)] object-cover"
                       />
-                    ) : (
-                      <span className="flex h-12 w-14 shrink-0 items-center justify-center rounded-lg border border-[var(--d-border)] bg-[var(--d-bg-soft)] text-[var(--d-accent)]">
-                        <Building2 className="h-5 w-5" />
-                      </span>
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="truncate text-[12.5px] font-semibold text-[var(--d-fg)]">
-                          {l.title}
-                        </span>
-                        <Tag tone={l.tone}>{l.label}</Tag>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="truncate text-[12.5px] font-semibold text-[var(--d-fg)]">
+                            {l.title}
+                          </span>
+                          <Tag tone={l.tone}>{l.label}</Tag>
+                        </div>
+                        <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-[var(--d-faint)]">
+                          <MapPin className="h-3 w-3" />
+                          <span className="truncate">
+                            {l.type} · {l.district} · {l.rooms} · {l.area}
+                          </span>
+                        </div>
                       </div>
-                      <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-[var(--d-faint)]">
-                        <MapPin className="h-3 w-3" />
-                        <span className="truncate">
-                          {l.type} · {l.district} · {l.rooms} · {l.area}
-                        </span>
+                      <div className="shrink-0 text-right">
+                        <div className="text-[12.5px] font-bold tabular-nums text-[var(--d-accent)]">
+                          {l.price}
+                        </div>
+                        <div className="text-[10px] text-[var(--d-faint)]">{l.agent}</div>
                       </div>
-                    </div>
-                    <div className="shrink-0 text-right">
-                      <div className="text-[12.5px] font-bold tabular-nums text-[var(--d-accent)]">
-                        {l.price}
-                      </div>
-                      <div className="text-[10px] text-[var(--d-faint)]">{l.agent}</div>
-                    </div>
+                    </motion.li>
+                  ))}
+                </AnimatePresence>
+                {visibleListings.length === 0 && (
+                  <li className="rounded-xl border border-dashed border-[var(--d-border)] px-3 py-8 text-center text-[12px] text-[var(--d-faint)]">
+                    Bu filtreye uygun ilan bulunamadı.
                   </li>
-                ))}
+                )}
               </ul>
             </Panel>
 
@@ -289,9 +510,11 @@ function EstatePanel() {
               <Panel title="Komisyon (Aylık)">
                 <div className="flex items-end justify-between">
                   <div>
-                    <div className="text-2xl font-bold text-[var(--d-fg)]">₺1.24M</div>
+                    <div className="text-2xl font-bold text-[var(--d-fg)]">
+                      ₺<DemoCounter value={totalCommission} format={(n) => fmtTRY(n)} />
+                    </div>
                     <div className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--d-pos)]">
-                      <TrendingUp className="h-3 w-3" /> geçen aya göre +22%
+                      <TrendingUp className="h-3 w-3" /> tamamlanan satışlar dahil
                     </div>
                   </div>
                   <Banknote className="h-5 w-5 text-[var(--d-accent)]" />
@@ -321,35 +544,86 @@ function EstatePanel() {
             </div>
           </div>
 
-          {/* lead pipeline */}
-          <Panel title="Lead Pipeline" action="Bu Hafta">
-            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-              {PIPELINE.map((p, i) => (
-                <div
-                  key={p.stage}
-                  className="relative rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] p-3"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-semibold uppercase tracking-wide text-[var(--d-muted)]">
-                      {p.stage}
-                    </span>
-                    {i < PIPELINE.length - 1 && (
-                      <span className="hidden text-[var(--d-faint)] sm:inline">→</span>
-                    )}
-                  </div>
-                  <div className="mt-2 text-2xl font-bold tabular-nums text-[var(--d-fg)]">
-                    {p.count}
-                  </div>
-                  <div className="mt-1 flex items-center justify-between">
-                    <span className="text-[10px] text-[var(--d-faint)]">{p.hint}</span>
-                    <Tag tone={p.tone}>müşteri</Tag>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="mt-3 flex items-center gap-3">
-              <span className="text-[11px] text-[var(--d-faint)]">Dönüşüm akışı</span>
-              <MiniBars data={[24, 13, 7, 4]} className="h-8 flex-1" />
+          {/* satış süreci — interactive kanban */}
+          <Panel
+            title="Satış Süreci"
+            action={`${leads.length} müşteri adayı`}
+          >
+            <div className="-mx-1 overflow-x-auto pb-1">
+              <div className="flex min-w-[760px] gap-2.5 px-1">
+                {STAGES.map((stage) => {
+                  const items = leadsByStage[stage.id];
+                  return (
+                    <div
+                      key={stage.id}
+                      className="flex w-[152px] shrink-0 flex-col rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] p-2"
+                    >
+                      <div className="mb-2 flex items-center justify-between gap-1 px-0.5">
+                        <span className="truncate text-[11px] font-semibold text-[var(--d-fg)]">
+                          {stage.label}
+                        </span>
+                        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--d-accent)]/15 px-1 text-[10px] font-bold tabular-nums text-[var(--d-accent)]">
+                          <DemoCounter value={items.length} />
+                        </span>
+                      </div>
+                      <div className="flex min-h-[64px] flex-col gap-2">
+                        <AnimatePresence initial={false} mode="popLayout">
+                          {items.map((lead) => {
+                            const idx = STAGES.findIndex((s) => s.id === lead.stage);
+                            return (
+                              <motion.div
+                                key={lead.id}
+                                layoutId={`lead-${lead.id}`}
+                                layout
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                transition={{ duration: 0.3, ease }}
+                                onClick={() => setSelectedLead(lead)}
+                                className="group cursor-pointer rounded-lg border border-[var(--d-border)] bg-[var(--d-surface)] p-2 transition-colors hover:border-[var(--d-accent)]/50"
+                              >
+                                <div className="truncate text-[11.5px] font-semibold text-[var(--d-fg)]">
+                                  {lead.name}
+                                </div>
+                                <div className="mt-0.5 truncate text-[10px] text-[var(--d-faint)]">
+                                  {lead.interest}
+                                </div>
+                                <div className="mt-1 text-[11px] font-bold tabular-nums text-[var(--d-accent)]">
+                                  ₺{fmtTRY(lead.budget)}
+                                </div>
+                                <div
+                                  className="mt-1.5 flex items-center justify-between"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <IconButton
+                                    icon={ChevronLeft}
+                                    label="Önceki aşama"
+                                    onClick={() => moveLead(lead, -1)}
+                                    className={idx === 0 ? "pointer-events-none opacity-30" : ""}
+                                  />
+                                  <Tag tone={STAGE_TONE[lead.stage]}>{lead.agent.split(" ")[0]}</Tag>
+                                  <IconButton
+                                    icon={ChevronRight}
+                                    label="Sonraki aşama"
+                                    tone="success"
+                                    onClick={() => moveLead(lead, 1)}
+                                    className={idx === STAGES.length - 1 ? "pointer-events-none opacity-30" : ""}
+                                  />
+                                </div>
+                              </motion.div>
+                            );
+                          })}
+                        </AnimatePresence>
+                        {items.length === 0 && (
+                          <div className="rounded-lg border border-dashed border-[var(--d-border)] px-2 py-4 text-center text-[10px] text-[var(--d-faint)]">
+                            Boş
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </Panel>
 
@@ -380,34 +654,52 @@ function EstatePanel() {
               </ul>
             </Panel>
 
-            <Panel title="WhatsApp Lead Takibi" action="Otomatik">
+            <Panel title="WhatsApp Aday Takibi" action="Otomatik">
               <div className="flex items-start gap-3 rounded-xl bg-[#25D366]/10 p-3">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#25D366] text-[#06210f]">
                   <MessageCircle className="h-4 w-4" />
                 </span>
                 <div className="text-[12px] leading-relaxed text-[var(--d-muted)]">
                   Merhaba <span className="font-semibold text-[var(--d-fg)]">Selin Hanım</span>,
-                  Kadıköy'deki <span className="font-semibold text-[var(--d-fg)]">3+1 Satılık Daire</span> için
+                  Kadıköy{"'"}deki <span className="font-semibold text-[var(--d-fg)]">3+1 Satılık Daire</span> için
                   ilginiz için teşekkürler. Yarın bir görüşme ayarlayalım mı?
                   <div className="mt-2 flex gap-2">
-                    <span className="rounded-full bg-[#25D366] px-2.5 py-1 text-[10px] font-semibold text-[#06210f]">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        toast({ title: "Görüşme onaylandı", desc: "Selin Hanım · yarın 11:00", tone: "success", icon: CheckCircle2 })
+                      }
+                      className="rounded-full bg-[#25D366] px-2.5 py-1 text-[10px] font-semibold text-[#06210f] transition-transform hover:scale-[1.04]"
+                    >
                       Evet, uygun
-                    </span>
-                    <span className="rounded-full border border-[var(--d-border)] px-2.5 py-1 text-[10px] font-semibold text-[var(--d-muted)]">
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        toast({ title: "Geri arama planlandı", desc: "Selin Hanım · Cuma 10:00", tone: "default", icon: Phone })
+                      }
+                      className="rounded-full border border-[var(--d-border)] px-2.5 py-1 text-[10px] font-semibold text-[var(--d-muted)] transition-colors hover:text-[var(--d-fg)]"
+                    >
                       Sonra ara
-                    </span>
+                    </button>
                   </div>
                 </div>
               </div>
-              <div className="mt-3 flex items-center justify-between rounded-xl border border-[var(--d-border)] px-3 py-2 text-[11px]">
+              <button
+                type="button"
+                onClick={() =>
+                  toast({ title: "Geri arama hatırlatıldı", desc: "Cem Yılmaz · bugün 14:00", tone: "default", icon: Phone })
+                }
+                className="mt-3 flex w-full items-center justify-between rounded-xl border border-[var(--d-border)] px-3 py-2 text-[11px] transition-colors hover:border-[var(--d-accent)]/40"
+              >
                 <span className="inline-flex items-center gap-1.5 text-[var(--d-muted)]">
                   <Phone className="h-3.5 w-3.5 text-[var(--d-accent)]" /> Geri arama
                 </span>
                 <span className="font-semibold text-[var(--d-fg)]">Cem Yılmaz · 14:00</span>
-              </div>
+              </button>
               <div className="mt-2 flex items-center justify-between rounded-xl border border-[var(--d-border)] px-3 py-2 text-[11px]">
                 <span className="inline-flex items-center gap-1.5 text-[var(--d-muted)]">
-                  <Star className="h-3.5 w-3.5 text-[var(--d-accent)]" /> Sıcak lead
+                  <Star className="h-3.5 w-3.5 text-[var(--d-accent)]" /> Sıcak fırsat
                 </span>
                 <span className="font-semibold text-[var(--d-fg)]">Bütçe ₺8M · Teklif aşaması</span>
               </div>
@@ -415,6 +707,156 @@ function EstatePanel() {
           </div>
         </div>
       </div>
+
+      {/* İlan detay modal */}
+      <DemoModal
+        open={!!selectedListing}
+        onClose={() => setSelectedListing(null)}
+        title={selectedListing ? selectedListing.title : ""}
+        footer={
+          selectedListing && (
+            <>
+              <DemoActionButton variant="ghost" onClick={() => setSelectedListing(null)}>
+                Kapat
+              </DemoActionButton>
+              <DemoActionButton
+                variant="solid"
+                onClick={() => {
+                  toast({ title: "İlan paylaşıldı", desc: `${selectedListing.title} · vitrine eklendi`, tone: "success" });
+                  setSelectedListing(null);
+                }}
+              >
+                Vitrinde Paylaş
+              </DemoActionButton>
+            </>
+          )
+        }
+      >
+        {selectedListing && (
+          <div className="space-y-4">
+            <img
+              src={selectedListing.image}
+              alt={selectedListing.title}
+              className="h-40 w-full rounded-2xl border border-[var(--d-border)] object-cover"
+            />
+            <div className="flex items-center justify-between">
+              <span className="text-2xl font-bold tabular-nums text-[var(--d-accent)]">
+                {selectedListing.price}
+              </span>
+              <Tag tone={selectedListing.tone}>{selectedListing.label}</Tag>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-[12.5px]">
+              <div className="flex items-center gap-2 rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] px-3 py-2.5">
+                <Home className="h-4 w-4 text-[var(--d-accent)]" />
+                <span className="text-[var(--d-fg)]">{selectedListing.rooms}</span>
+              </div>
+              <div className="flex items-center gap-2 rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] px-3 py-2.5">
+                <Ruler className="h-4 w-4 text-[var(--d-accent)]" />
+                <span className="text-[var(--d-fg)]">{selectedListing.area}</span>
+              </div>
+              <div className="flex items-center gap-2 rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] px-3 py-2.5">
+                <MapPin className="h-4 w-4 text-[var(--d-accent)]" />
+                <span className="text-[var(--d-fg)]">{selectedListing.district}</span>
+              </div>
+              <div className="flex items-center gap-2 rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] px-3 py-2.5">
+                <Building2 className="h-4 w-4 text-[var(--d-accent)]" />
+                <span className="text-[var(--d-fg)]">{selectedListing.type}</span>
+              </div>
+            </div>
+            <div className="flex items-center justify-between rounded-xl border border-[var(--d-border)] px-3 py-2.5 text-[12.5px]">
+              <span className="inline-flex items-center gap-2 text-[var(--d-muted)]">
+                <User className="h-4 w-4" /> Sorumlu danışman
+              </span>
+              <span className="inline-flex items-center gap-1.5 font-semibold text-[var(--d-fg)]">
+                <Avatar name={selectedListing.agent} className="h-6 w-6 text-[10px]" />
+                {selectedListing.agent}
+              </span>
+            </div>
+          </div>
+        )}
+      </DemoModal>
+
+      {/* müşteri adayı profili modal */}
+      <DemoModal
+        open={!!selectedLead}
+        onClose={() => setSelectedLead(null)}
+        title={selectedLead ? selectedLead.name : ""}
+        footer={
+          selectedLead && (
+            <>
+              <DemoActionButton variant="ghost" onClick={() => setSelectedLead(null)}>
+                Kapat
+              </DemoActionButton>
+              <DemoActionButton
+                variant="solid"
+                onClick={() => {
+                  toast({ title: "WhatsApp mesajı gönderildi", desc: selectedLead.name, tone: "success", icon: MessageCircle });
+                  setSelectedLead(null);
+                }}
+              >
+                <MessageCircle className="h-4 w-4" /> Mesaj Gönder
+              </DemoActionButton>
+            </>
+          )
+        }
+      >
+        {selectedLead && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 rounded-2xl border border-[var(--d-border)] bg-[var(--d-surface-2)] p-3">
+              <Avatar name={selectedLead.name} className="h-11 w-11 text-[13px]" />
+              <div className="min-w-0 flex-1">
+                <div className="text-[14px] font-semibold text-[var(--d-fg)]">{selectedLead.name}</div>
+                <div className="inline-flex items-center gap-1.5 text-[12px] text-[var(--d-muted)]">
+                  <Phone className="h-3.5 w-3.5" /> {selectedLead.phone}
+                </div>
+              </div>
+              <Tag tone={STAGE_TONE[selectedLead.stage]}>{stageLabel(selectedLead.stage)}</Tag>
+            </div>
+            <div className="space-y-2 text-[12.5px]">
+              <div className="flex items-center justify-between rounded-xl border border-[var(--d-border)] px-3 py-2.5">
+                <span className="inline-flex items-center gap-2 text-[var(--d-muted)]">
+                  <Home className="h-4 w-4 text-[var(--d-accent)]" /> İlgilendiği ilan
+                </span>
+                <span className="text-right font-semibold text-[var(--d-fg)]">{selectedLead.interest}</span>
+              </div>
+              <div className="flex items-center justify-between rounded-xl border border-[var(--d-border)] px-3 py-2.5">
+                <span className="inline-flex items-center gap-2 text-[var(--d-muted)]">
+                  <Wallet className="h-4 w-4 text-[var(--d-accent)]" /> Bütçe
+                </span>
+                <span className="font-bold tabular-nums text-[var(--d-accent)]">₺{fmtTRY(selectedLead.budget)}</span>
+              </div>
+              <div className="flex items-center justify-between rounded-xl border border-[var(--d-border)] px-3 py-2.5">
+                <span className="inline-flex items-center gap-2 text-[var(--d-muted)]">
+                  <User className="h-4 w-4 text-[var(--d-accent)]" /> Danışman
+                </span>
+                <span className="font-semibold text-[var(--d-fg)]">{selectedLead.agent}</span>
+              </div>
+            </div>
+            <div className="rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] px-3 py-2.5">
+              <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-[var(--d-faint)]">
+                Notlar
+              </div>
+              <p className="text-[12.5px] leading-relaxed text-[var(--d-muted)]">{selectedLead.notes}</p>
+            </div>
+          </div>
+        )}
+      </DemoModal>
+
+      {/* satış tamamlama onayı */}
+      <ConfirmDialog
+        open={!!completeLead}
+        title="Satış tamamlansın mı?"
+        message={
+          completeLead
+            ? `${completeLead.name} müşteri adayı "Tamamlandı" aşamasına alınacak ve ₺${fmtTRY(completeLead.commission)} komisyon toplam komisyona eklenecek.`
+            : ""
+        }
+        confirmLabel="Evet, tamamla"
+        cancelLabel="Vazgeç"
+        tone="accent"
+        onConfirm={confirmComplete}
+        onClose={() => setCompleteLead(null)}
+      />
     </BrowserFrame>
   );
 }
@@ -432,7 +874,7 @@ export function EstateSite() {
       <DemoHero
         sector="Emlak Yönetim Platformu"
         name="EstateOS"
-        promise="Portföy, ilanlar, müşteri takibi ve lead'leri tek platformda yöneten emlak işletme sistemi. Dağınık ilanlar ve kaçan müşteri görüşmeleri sona ersin."
+        promise="Portföy, ilanlar, müşteri takibi ve müşteri adaylarını tek platformda yöneten emlak işletme sistemi. Dağınık ilanlar ve kaçan müşteri görüşmeleri sona ersin."
         image={img}
         serif
       />
@@ -445,7 +887,7 @@ export function EstateSite() {
 
       <SolutionSection
         title="EstateOS bu sorunları nasıl çözüyor?"
-        subtitle="Portföy, lead, görev ve komisyon; dağınık ilanlar ve Excel tabloları yerine tek, akıllı bir platformda."
+        subtitle="Portföy, müşteri adayı, görev ve komisyon; dağınık ilanlar ve Excel tabloları yerine tek, akıllı bir platformda."
         items={SOLUTIONS}
         serif
       />
@@ -454,7 +896,7 @@ export function EstateSite() {
         id="panel"
         eyebrow="Canlı Panel"
         title="Ofisinizi yöneten emlak panosu"
-        subtitle="Aşağıdaki panel, gerçek bir emlak ofisinin bir gününü yansıtacak şekilde tasarlandı: aktif portföy, lead pipeline, danışman görevleri ve komisyon tek ekranda."
+        subtitle="Aşağıdaki panel gerçekten çalışır: müşteri adaylarını satış sürecinde ilerletin, ilanları filtreleyin, kartlara tıklayın — komisyon ve istatistikler anında güncellenir."
         serif
       >
         <DemoStage>

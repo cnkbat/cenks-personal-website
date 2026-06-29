@@ -1,15 +1,18 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import {
   Activity,
   Bell,
   CalendarCheck,
   CalendarDays,
+  Check,
   ClipboardList,
   CreditCard,
   FileText,
   HeartPulse,
   LayoutDashboard,
+  LogIn,
   MessageCircle,
   Receipt,
   Stethoscope,
@@ -22,54 +25,178 @@ import {
   Avatar,
   Bar,
   BrowserFrame,
+  ConfirmDialog,
+  DemoActionButton,
+  DemoCounter,
   DemoHero,
+  DemoModal,
   DemoShell,
   DemoStage,
   Donut,
   FeatureGrid,
+  FilterChips,
   FinalCTA,
   Panel,
   PricingCards,
   ProblemSection,
   Scenario,
+  SearchInput,
   Section,
+  SelectField,
   SolutionSection,
   Sparkline,
   StatTile,
+  Tabs,
   Tag,
   demoThemes,
+  useDemoToast,
 } from "@/components/demos/kit";
 
+const fmtTRY = (n: number) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+
 /* --------------------------- demo data --------------------------- */
-const CLINIC_TYPES = ["Diş Kliniği", "Fizik Tedavi", "Diyetisyen", "Özel Muayenehane"];
+const CLINIC_TYPES = ["Diş Kliniği", "Fizik Tedavi", "Diyetisyen", "Özel Muayenehane"] as const;
 
-const SCHEDULE = [
-  { time: "09:00", name: "Ayşe Kılıç", treatment: "Kontrol Muayenesi", doctor: "Dr. Mehmet Aydın", tone: "success" as const, label: "Tamamlandı" },
-  { time: "09:45", name: "Hasan Yıldız", treatment: "Dolgu", doctor: "Dr. Mehmet Aydın", tone: "success" as const, label: "Tamamlandı" },
-  { time: "10:30", name: "Zeynep Arslan", treatment: "Fizik Tedavi Seansı", doctor: "Dr. Selin Korkmaz", tone: "accent" as const, label: "Onaylı" },
-  { time: "11:15", name: "Emre Doğan", treatment: "Diyet Kontrolü", doctor: "Dr. Selin Korkmaz", tone: "accent" as const, label: "Onaylı" },
-  { time: "13:30", name: "Fatma Şen", treatment: "Diş Çekimi", doctor: "Dr. Burak Şahin", tone: "warn" as const, label: "Bekliyor" },
-  { time: "14:15", name: "Ali Çelik", treatment: "Kanal Tedavisi", doctor: "Dr. Burak Şahin", tone: "warn" as const, label: "Bekliyor" },
+const DOCTOR_NAMES = ["Dr. Mehmet Aydın", "Dr. Selin Korkmaz", "Dr. Burak Şahin"] as const;
+const SLOTS = ["09:00", "09:45", "10:30", "11:15", "12:00", "13:30", "14:15", "15:00", "15:45", "16:30"];
+
+type ApptStatus = "onayli" | "bekliyor" | "geldi" | "tamamlandi";
+
+const APPT_META: Record<ApptStatus, { label: string; tone: "accent" | "warn" | "success" }> = {
+  onayli: { label: "Onaylı", tone: "accent" },
+  bekliyor: { label: "Bekliyor", tone: "warn" },
+  geldi: { label: "Geldi", tone: "accent" },
+  tamamlandi: { label: "Tamamlandı", tone: "success" },
+};
+
+type Appt = {
+  id: number;
+  time: string;
+  name: string;
+  phone: string;
+  branch: (typeof CLINIC_TYPES)[number];
+  treatment: string;
+  doctor: (typeof DOCTOR_NAMES)[number];
+  status: ApptStatus;
+  history: { date: string; text: string }[];
+  ledger: { date: string; text: string; amount: number; paid: boolean }[];
+};
+
+const SCHEDULE: Appt[] = [
+  {
+    id: 1,
+    time: "09:00",
+    name: "Ayşe Kılıç",
+    phone: "0532 111 22 33",
+    branch: "Diş Kliniği",
+    treatment: "Kontrol Muayenesi",
+    doctor: "Dr. Mehmet Aydın",
+    status: "tamamlandi",
+    history: [
+      { date: "12.01.2026", text: "Diş taşı temizliği" },
+      { date: "03.09.2025", text: "Dolgu yenileme (alt sol azı)" },
+    ],
+    ledger: [{ date: "29.06.2026", text: "Kontrol Muayenesi", amount: 850, paid: true }],
+  },
+  {
+    id: 2,
+    time: "09:45",
+    name: "Hasan Yıldız",
+    phone: "0533 222 33 44",
+    branch: "Diş Kliniği",
+    treatment: "Dolgu",
+    doctor: "Dr. Mehmet Aydın",
+    status: "tamamlandi",
+    history: [{ date: "20.05.2026", text: "Kanal tedavisi 2. seans" }],
+    ledger: [{ date: "29.06.2026", text: "Dolgu", amount: 1200, paid: true }],
+  },
+  {
+    id: 3,
+    time: "10:30",
+    name: "Zeynep Arslan",
+    phone: "0535 333 44 55",
+    branch: "Fizik Tedavi",
+    treatment: "Fizik Tedavi Seansı",
+    doctor: "Dr. Selin Korkmaz",
+    status: "onayli",
+    history: [
+      { date: "26.06.2026", text: "Fizik tedavi 9. seans" },
+      { date: "24.06.2026", text: "Fizik tedavi 8. seans" },
+    ],
+    ledger: [{ date: "10.06.2026", text: "Fizik Tedavi (10 seans)", amount: 6500, paid: false }],
+  },
+  {
+    id: 4,
+    time: "11:15",
+    name: "Emre Doğan",
+    phone: "0536 444 55 66",
+    branch: "Diyetisyen",
+    treatment: "Diyet Kontrolü",
+    doctor: "Dr. Selin Korkmaz",
+    status: "onayli",
+    history: [{ date: "15.06.2026", text: "İlk ölçüm ve beslenme planı" }],
+    ledger: [{ date: "29.06.2026", text: "Diyet Kontrolü", amount: 600, paid: true }],
+  },
+  {
+    id: 5,
+    time: "13:30",
+    name: "Fatma Şen",
+    phone: "0537 555 66 77",
+    branch: "Diş Kliniği",
+    treatment: "Diş Çekimi",
+    doctor: "Dr. Burak Şahin",
+    status: "bekliyor",
+    history: [{ date: "18.06.2026", text: "Röntgen ve muayene" }],
+    ledger: [{ date: "29.06.2026", text: "Diş Çekimi", amount: 1500, paid: false }],
+  },
+  {
+    id: 6,
+    time: "14:15",
+    name: "Ali Çelik",
+    phone: "0538 666 77 88",
+    branch: "Özel Muayenehane",
+    treatment: "Kanal Tedavisi",
+    doctor: "Dr. Burak Şahin",
+    status: "bekliyor",
+    history: [{ date: "22.06.2026", text: "Kanal tedavisi 1. seans" }],
+    ledger: [{ date: "22.06.2026", text: "Kanal Tedavisi", amount: 3400, paid: false }],
+  },
 ];
 
-const WAITING = [
-  { name: "Merve Aksoy", note: "Sıra No 4 · Dr. Mehmet Aydın", waited: "8 dk", tone: "accent" as const, label: "Sırada" },
-  { name: "Kerem Polat", note: "İlk muayene · Evrak bekliyor", waited: "12 dk", tone: "warn" as const, label: "Kayıt" },
-  { name: "Selin Yavuz", note: "Kontrol · Dr. Selin Korkmaz", waited: "3 dk", tone: "accent" as const, label: "Sırada" },
+type WaitStatus = "sirada" | "kayit";
+type Waiting = { id: number; name: string; note: string; waited: string; status: WaitStatus };
+
+const WAIT_META: Record<WaitStatus, { label: string; tone: "accent" | "warn" }> = {
+  sirada: { label: "Sırada", tone: "accent" },
+  kayit: { label: "Kayıt", tone: "warn" },
+};
+
+const WAITING: Waiting[] = [
+  { id: 1, name: "Merve Aksoy", note: "Sıra No 4 · Dr. Mehmet Aydın", waited: "8 dk", status: "sirada" },
+  { id: 2, name: "Kerem Polat", note: "İlk muayene · Evrak bekliyor", waited: "12 dk", status: "kayit" },
+  { id: 3, name: "Selin Yavuz", note: "Kontrol · Dr. Selin Korkmaz", waited: "3 dk", status: "sirada" },
 ];
 
-const PAYMENTS = [
-  { name: "Ayşe Kılıç", treatment: "Kontrol Muayenesi", amount: "₺850", tone: "success" as const, label: "Ödendi" },
-  { name: "Hasan Yıldız", treatment: "Dolgu", amount: "₺1.200", tone: "success" as const, label: "Ödendi" },
-  { name: "Zeynep Arslan", treatment: "Fizik Tedavi (10 seans)", amount: "₺6.500", tone: "warn" as const, label: "Bekliyor" },
-  { name: "Ali Çelik", treatment: "Kanal Tedavisi", amount: "₺3.400", tone: "warn" as const, label: "Bekliyor" },
+type Payment = {
+  id: number;
+  name: string;
+  treatment: string;
+  amount: number;
+  paid: boolean;
+};
+
+const PAYMENTS: Payment[] = [
+  { id: 1, name: "Ayşe Kılıç", treatment: "Kontrol Muayenesi", amount: 850, paid: true },
+  { id: 2, name: "Hasan Yıldız", treatment: "Dolgu", amount: 1200, paid: true },
+  { id: 3, name: "Zeynep Arslan", treatment: "Fizik Tedavi (10 seans)", amount: 6500, paid: false },
+  { id: 4, name: "Ali Çelik", treatment: "Kanal Tedavisi", amount: 3400, paid: false },
 ];
 
 const DOCTORS = [
   { name: "Dr. Mehmet Aydın", role: "Diş Hekimi", today: 12, fill: 92 },
   { name: "Dr. Selin Korkmaz", role: "Fizyoterapist", today: 9, fill: 78 },
   { name: "Dr. Burak Şahin", role: "Diş Hekimi", today: 8, fill: 64 },
-];
+] as const;
 
 const PROBLEMS = [
   "Randevular telefon ve deftere yazılıyor; aynı saate iki hasta yazılıyor, çakışmalar kapıda fark ediliyor.",
@@ -150,8 +277,98 @@ const SCENARIO_STEPS = [
   { time: "Akşam", text: "Kapanışta sekreter günlük hasta sayısını, hekim doluluğunu ve günün tahsilatını rapordan görüyor; bekleyen ödemeleri tek tıkla hatırlatıyor." },
 ];
 
-/* --------------------------- the dashboard mockup --------------------------- */
+/* --------------------------- the interactive dashboard --------------------------- */
 function ClinicPanel() {
+  const toast = useDemoToast();
+
+  const [appts, setAppts] = useState<Appt[]>(SCHEDULE);
+  const [payments, setPayments] = useState<Payment[]>(PAYMENTS);
+  const [waiting, setWaiting] = useState<Waiting[]>(WAITING);
+  const [newRecords, setNewRecords] = useState(6);
+
+  const [query, setQuery] = useState("");
+  const [branchFilter, setBranchFilter] = useState("all");
+
+  const [selected, setSelected] = useState<Appt | null>(null);
+  const [tab, setTab] = useState("bilgiler");
+  const [draft, setDraft] = useState<{ time: string; doctor: string }>({ time: "", doctor: "" });
+
+  const [confirmWait, setConfirmWait] = useState<Waiting | null>(null);
+
+  /* derived, live stats */
+  const todayPatients = appts.length;
+  const dayCapacity = 35;
+  const filledSlots = appts.filter((a) => a.status !== "bekliyor").length + waiting.length;
+  const doluluk = Math.min(100, Math.round((filledSlots / dayCapacity) * 100));
+  const emptySlots = Math.max(0, dayCapacity - filledSlots);
+  const dailyCollected = payments.filter((p) => p.paid).reduce((s, p) => s + p.amount, 0);
+  const weeklyCollected = 77900 + dailyCollected;
+
+  const branchFilters = useMemo(
+    () => [{ id: "all", label: "Tümü" }, ...CLINIC_TYPES.map((t) => ({ id: t, label: t }))],
+    [],
+  );
+
+  const visible = appts.filter((a) => {
+    if (branchFilter !== "all" && a.branch !== branchFilter) return false;
+    const q = query.trim().toLocaleLowerCase("tr");
+    if (!q) return true;
+    return (
+      a.name.toLocaleLowerCase("tr").includes(q) ||
+      a.treatment.toLocaleLowerCase("tr").includes(q) ||
+      a.doctor.toLocaleLowerCase("tr").includes(q)
+    );
+  });
+
+  /* actions */
+  function arrive(a: Appt) {
+    setAppts((prev) => prev.map((x) => (x.id === a.id ? { ...x, status: "geldi" } : x)));
+    toast({ title: "Hasta geldi olarak işaretlendi", desc: `${a.name} · ${a.time}`, tone: "success", icon: LogIn });
+  }
+
+  function complete(a: Appt) {
+    setAppts((prev) => prev.map((x) => (x.id === a.id ? { ...x, status: "tamamlandi" } : x)));
+    toast({ title: "Randevu tamamlandı", desc: `${a.name} · ${a.doctor}`, tone: "success", icon: Check });
+  }
+
+  function openDetail(a: Appt) {
+    setSelected(a);
+    setTab("bilgiler");
+    setDraft({ time: a.time, doctor: a.doctor });
+  }
+
+  function saveDetail() {
+    if (!selected) return;
+    const safeDoctor = (DOCTOR_NAMES as readonly string[]).includes(draft.doctor)
+      ? (draft.doctor as Appt["doctor"])
+      : selected.doctor;
+    setAppts((prev) =>
+      prev
+        .map((x) => (x.id === selected.id ? { ...x, time: draft.time, doctor: safeDoctor } : x))
+        .sort((a, b) => a.time.localeCompare(b.time)),
+    );
+    toast({ title: "Randevu güncellendi", desc: `${selected.name} · ${safeDoctor} · ${draft.time}`, tone: "default", icon: CalendarCheck });
+    setSelected(null);
+  }
+
+  function collect(p: Payment) {
+    setPayments((prev) => prev.map((x) => (x.id === p.id ? { ...x, paid: true } : x)));
+    setNewRecords((n) => n + 1);
+    toast({ title: "Ödeme tahsil edildi", desc: `${p.name} · +₺${fmtTRY(p.amount)} günlük tahsilata eklendi`, tone: "success", icon: Wallet });
+  }
+
+  function callWaiting(w: Waiting) {
+    setWaiting((prev) => prev.filter((x) => x.id !== w.id));
+    toast({ title: "Hasta muayeneye alındı", desc: `${w.name} hekim odasına yönlendirildi`, tone: "success", icon: HeartPulse });
+  }
+
+  function sendReminders(label: string, desc: string) {
+    toast({ title: label, desc, tone: "success", icon: MessageCircle });
+  }
+
+  // live view of the open appointment so the modal footer/tag reflect state changes
+  const current = selected ? appts.find((a) => a.id === selected.id) ?? selected : null;
+
   return (
     <BrowserFrame url="clinicos.app/pano">
       <div className="grid gap-3 lg:grid-cols-[180px_1fr]">
@@ -170,75 +387,118 @@ function ClinicPanel() {
             { icon: ClipboardList, label: "Tedaviler" },
             { icon: Wallet, label: "Ödemeler" },
           ].map((n) => (
-            <span
+            <button
               key={n.label}
+              type="button"
+              onClick={() =>
+                toast({
+                  title: n.active ? "Pano açık" : `${n.label} bölümü`,
+                  desc: n.active ? "Kliniğin günlük özeti" : `${n.label} demo modunda gösterimde`,
+                  tone: "default",
+                  icon: n.icon,
+                })
+              }
               className={
-                "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12px] font-medium " +
+                "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[12px] font-medium transition-colors " +
                 (n.active
                   ? "bg-[var(--d-accent)]/15 text-[var(--d-accent)]"
-                  : "text-[var(--d-muted)]")
+                  : "text-[var(--d-muted)] hover:bg-[var(--d-surface-2)] hover:text-[var(--d-fg)]")
               }
             >
               <n.icon className="h-4 w-4" />
               {n.label}
-            </span>
+            </button>
           ))}
           <div className="mt-3 border-t border-[var(--d-border)] pt-3">
             <div className="px-2 text-[10px] font-semibold uppercase tracking-wide text-[var(--d-faint)]">
               Branşlar
             </div>
             <div className="mt-2 flex flex-wrap gap-1.5 px-1">
-              {CLINIC_TYPES.map((t, i) => (
-                <span
-                  key={t}
-                  className={
-                    "rounded-full px-2 py-0.5 text-[10px] font-medium " +
-                    (i === 0
-                      ? "bg-[var(--d-accent)]/15 text-[var(--d-accent)]"
-                      : "border border-[var(--d-border)] text-[var(--d-muted)]")
-                  }
-                >
-                  {t}
-                </span>
-              ))}
+              {CLINIC_TYPES.map((t) => {
+                const active = branchFilter === t;
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setBranchFilter(active ? "all" : t)}
+                    className={
+                      "rounded-full px-2 py-0.5 text-[10px] font-medium transition-colors " +
+                      (active
+                        ? "bg-[var(--d-accent)]/15 text-[var(--d-accent)]"
+                        : "border border-[var(--d-border)] text-[var(--d-muted)] hover:text-[var(--d-fg)]")
+                    }
+                  >
+                    {t}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </aside>
 
         {/* main */}
         <div className="space-y-3">
-          {/* stats */}
+          {/* live stats */}
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <StatTile label="Bugünkü Hasta" value="24" delta="+4" icon={Users} />
-            <StatTile label="Doluluk" value="%82" delta="+9%" icon={Activity} />
-            <StatTile label="Günlük Tahsilat" value="₺18.400" delta="+14%" icon={Wallet} />
-            <StatTile label="Yeni Kayıt" value="6" delta="+3" icon={UserPlus} />
+            <StatTile label="Bugünkü Hasta" value={<DemoCounter value={todayPatients} />} delta="+4" icon={Users} />
+            <StatTile label="Doluluk" value={<DemoCounter value={doluluk} format={(n) => `%${Math.round(n)}`} />} delta="+9%" icon={Activity} />
+            <StatTile label="Günlük Tahsilat" value={<DemoCounter value={dailyCollected} format={(n) => `₺${fmtTRY(n)}`} />} delta="+14%" icon={Wallet} />
+            <StatTile label="Yeni Kayıt" value={<DemoCounter value={newRecords} />} delta="+3" icon={UserPlus} />
           </div>
 
           <div className="grid gap-3 lg:grid-cols-[1.35fr_1fr]">
-            {/* schedule */}
+            {/* schedule — interactive */}
             <Panel title="Hekim Takvimi · Günün Programı" action="Bugün">
+              <div className="mb-2.5 space-y-2">
+                <SearchInput value={query} onChange={setQuery} placeholder="Hasta, tedavi veya hekim ara…" />
+                <FilterChips options={branchFilters} value={branchFilter} onChange={setBranchFilter} />
+              </div>
               <ul className="space-y-2">
-                {SCHEDULE.map((a) => (
-                  <li
-                    key={a.time}
-                    className="flex items-center gap-3 rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] px-3 py-2.5"
-                  >
-                    <span className="w-11 text-[12px] font-semibold tabular-nums text-[var(--d-accent)]">
-                      {a.time}
-                    </span>
-                    <Avatar name={a.name} className="h-8 w-8" />
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-[12.5px] font-medium text-[var(--d-fg)]">
-                        {a.name}
+                {visible.map((a) => {
+                  const meta = APPT_META[a.status];
+                  const canArrive = a.status === "onayli" || a.status === "bekliyor";
+                  const canComplete = a.status === "geldi";
+                  return (
+                    <li
+                      key={a.id}
+                      onClick={() => openDetail(a)}
+                      className="group flex cursor-pointer items-center gap-3 rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] px-3 py-2.5 transition-colors hover:border-[var(--d-accent)]/40"
+                    >
+                      <span className="w-11 text-[12px] font-semibold tabular-nums text-[var(--d-accent)]">
+                        {a.time}
+                      </span>
+                      <Avatar name={a.name} className="h-8 w-8" />
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-[12.5px] font-medium text-[var(--d-fg)]">
+                          {a.name}
+                        </div>
+                        <div className="truncate text-[11px] text-[var(--d-faint)]">
+                          {a.treatment} · {a.doctor}
+                        </div>
                       </div>
-                      <div className="truncate text-[11px] text-[var(--d-faint)]">
-                        {a.treatment} · {a.doctor}
+                      <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                        {canArrive && (
+                          <DemoActionButton variant="soft" onClick={() => arrive(a)} className="px-2.5 py-1">
+                            <LogIn className="h-3.5 w-3.5" /> Geldi
+                          </DemoActionButton>
+                        )}
+                        {canComplete && (
+                          <DemoActionButton variant="solid" onClick={() => complete(a)} className="px-2.5 py-1">
+                            <Check className="h-3.5 w-3.5" /> Tamamla
+                          </DemoActionButton>
+                        )}
+                        <span className="hidden sm:block">
+                          <Tag tone={meta.tone}>{meta.label}</Tag>
+                        </span>
                       </div>
-                    </div>
-                    <Tag tone={a.tone}>{a.label}</Tag>
+                    </li>
+                  );
+                })}
+                {visible.length === 0 && (
+                  <li className="rounded-xl border border-dashed border-[var(--d-border)] px-3 py-6 text-center text-[12px] text-[var(--d-faint)]">
+                    Bu filtreyle eşleşen randevu yok.
                   </li>
-                ))}
+                )}
               </ul>
             </Panel>
 
@@ -247,9 +507,11 @@ function ClinicPanel() {
               <Panel title="Haftalık Tahsilat">
                 <div className="flex items-end justify-between">
                   <div>
-                    <div className="text-2xl font-bold text-[var(--d-fg)]">₺96.300</div>
+                    <div className="text-2xl font-bold text-[var(--d-fg)]">
+                      ₺<DemoCounter value={weeklyCollected} format={(n) => fmtTRY(n)} />
+                    </div>
                     <div className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--d-pos)]">
-                      <TrendingUp className="h-3 w-3" /> geçen haftaya göre +14%
+                      <TrendingUp className="h-3 w-3" /> bugünkü tahsilat dahil
                     </div>
                   </div>
                   <Receipt className="h-5 w-5 text-[var(--d-accent)]" />
@@ -259,15 +521,19 @@ function ClinicPanel() {
 
               <Panel title="Genel Doluluk">
                 <div className="flex items-center gap-4">
-                  <Donut value={82} size={72} label="%82" />
+                  <Donut value={doluluk} size={72} label={`%${doluluk}`} />
                   <div className="flex-1 space-y-1.5 text-[11px] text-[var(--d-muted)]">
                     <div className="flex items-center justify-between">
                       <span>Dolu slot</span>
-                      <span className="font-semibold text-[var(--d-fg)]">29 / 35</span>
+                      <span className="font-semibold text-[var(--d-fg)]">
+                        <DemoCounter value={filledSlots} /> / {dayCapacity}
+                      </span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span>Boş slot</span>
-                      <span className="font-semibold text-[var(--d-fg)]">6</span>
+                      <span className="font-semibold text-[var(--d-fg)]">
+                        <DemoCounter value={emptySlots} />
+                      </span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span>İptal / No-show</span>
@@ -279,7 +545,7 @@ function ClinicPanel() {
             </div>
           </div>
 
-          {/* doctors + waiting + payments */}
+          {/* doctors + waiting */}
           <div className="grid gap-3 lg:grid-cols-[1fr_1fr]">
             <Panel title="Hekim Doluluğu" action="Bugün">
               <div className="space-y-3">
@@ -303,24 +569,37 @@ function ClinicPanel() {
 
             <Panel title="Bekleyen Hastalar" action="Canlı">
               <ul className="space-y-2">
-                {WAITING.map((w) => (
-                  <li
-                    key={w.name}
-                    className="flex items-center gap-3 rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] px-3 py-2.5"
-                  >
-                    <Avatar name={w.name} className="h-8 w-8" />
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-[12.5px] font-medium text-[var(--d-fg)]">
-                        {w.name}
+                {waiting.map((w) => {
+                  const meta = WAIT_META[w.status];
+                  return (
+                    <li
+                      key={w.id}
+                      className="flex items-center gap-3 rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] px-3 py-2.5"
+                    >
+                      <Avatar name={w.name} className="h-8 w-8" />
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-[12.5px] font-medium text-[var(--d-fg)]">
+                          {w.name}
+                        </div>
+                        <div className="truncate text-[11px] text-[var(--d-faint)]">{w.note}</div>
                       </div>
-                      <div className="truncate text-[11px] text-[var(--d-faint)]">{w.note}</div>
-                    </div>
-                    <div className="flex flex-col items-end gap-1">
-                      <Tag tone={w.tone}>{w.label}</Tag>
-                      <span className="text-[10px] text-[var(--d-faint)]">{w.waited}</span>
-                    </div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex flex-col items-end gap-1">
+                          <Tag tone={meta.tone}>{meta.label}</Tag>
+                          <span className="text-[10px] text-[var(--d-faint)]">{w.waited}</span>
+                        </div>
+                        <DemoActionButton variant="solid" onClick={() => setConfirmWait(w)} className="px-2.5 py-1">
+                          Çağır
+                        </DemoActionButton>
+                      </div>
+                    </li>
+                  );
+                })}
+                {waiting.length === 0 && (
+                  <li className="rounded-xl border border-dashed border-[var(--d-border)] px-3 py-6 text-center text-[12px] text-[var(--d-faint)]">
+                    Bekleme salonu boş. Tüm hastalar muayeneye alındı.
                   </li>
-                ))}
+                )}
               </ul>
             </Panel>
           </div>
@@ -329,9 +608,9 @@ function ClinicPanel() {
           <div className="grid gap-3 lg:grid-cols-[1.35fr_1fr]">
             <Panel title="Ödeme Takibi" action="Tümü">
               <ul className="space-y-2">
-                {PAYMENTS.map((p) => (
+                {payments.map((p) => (
                   <li
-                    key={p.name}
+                    key={p.id}
                     className="flex items-center gap-3 rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] px-3 py-2.5"
                   >
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--d-accent)]/12 text-[var(--d-accent)]">
@@ -344,9 +623,15 @@ function ClinicPanel() {
                       <div className="truncate text-[11px] text-[var(--d-faint)]">{p.treatment}</div>
                     </div>
                     <span className="text-[12.5px] font-semibold tabular-nums text-[var(--d-fg)]">
-                      {p.amount}
+                      ₺{fmtTRY(p.amount)}
                     </span>
-                    <Tag tone={p.tone}>{p.label}</Tag>
+                    {p.paid ? (
+                      <Tag tone="success">Ödendi</Tag>
+                    ) : (
+                      <DemoActionButton variant="solid" onClick={() => collect(p)} className="px-2.5 py-1">
+                        Tahsil Et
+                      </DemoActionButton>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -362,8 +647,24 @@ function ClinicPanel() {
                   <span className="font-semibold text-[var(--d-fg)]"> 13:30</span> Dr. Burak Şahin ile
                   diş çekimi randevunuzu hatırlatırız. Onaylıyor musunuz?
                   <div className="mt-2 flex gap-2">
-                    <span className="rounded-full bg-[#25D366] px-2.5 py-1 text-[10px] font-semibold text-[#06210f]">Onayla</span>
-                    <span className="rounded-full border border-[var(--d-border)] px-2.5 py-1 text-[10px] font-semibold text-[var(--d-muted)]">Ertele</span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        sendReminders("Hatırlatma gönderildi", "Fatma Şen · WhatsApp randevu onayı")
+                      }
+                      className="rounded-full bg-[#25D366] px-2.5 py-1 text-[10px] font-semibold text-[#06210f] transition-transform hover:scale-[1.03]"
+                    >
+                      Gönder
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        toast({ title: "Randevu ertelendi", desc: "Fatma Şen için yeni saat istendi", tone: "warn", icon: CalendarDays })
+                      }
+                      className="rounded-full border border-[var(--d-border)] px-2.5 py-1 text-[10px] font-semibold text-[var(--d-muted)] transition-colors hover:text-[var(--d-fg)]"
+                    >
+                      Ertele
+                    </button>
                   </div>
                 </div>
               </div>
@@ -371,12 +672,140 @@ function ClinicPanel() {
                 <span className="inline-flex items-center gap-1.5 text-[var(--d-muted)]">
                   <CalendarCheck className="h-3.5 w-3.5 text-[var(--d-accent)]" /> 6 ay kontrol
                 </span>
-                <span className="font-semibold text-[var(--d-fg)]">8 hastaya otomatik gönderildi</span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    sendReminders("Kontrol hatırlatması gönderildi", "8 hastaya otomatik WhatsApp / SMS")
+                  }
+                  className="font-semibold text-[var(--d-accent)] transition-colors hover:text-[var(--d-fg)]"
+                >
+                  8 hastaya gönder
+                </button>
               </div>
             </Panel>
           </div>
         </div>
       </div>
+
+      {/* patient profile modal — Bilgiler / Geçmiş / Ödemeler */}
+      <DemoModal
+        open={!!selected}
+        onClose={() => setSelected(null)}
+        title={current ? current.name : ""}
+        footer={
+          current && (
+            <>
+              {current.status === "onayli" || current.status === "bekliyor" ? (
+                <DemoActionButton variant="ghost" onClick={() => arrive(current)}>
+                  <LogIn className="h-4 w-4" /> Geldi
+                </DemoActionButton>
+              ) : current.status === "geldi" ? (
+                <DemoActionButton variant="ghost" onClick={() => complete(current)}>
+                  <Check className="h-4 w-4" /> Tamamla
+                </DemoActionButton>
+              ) : null}
+              <DemoActionButton variant="solid" onClick={saveDetail}>Kaydet</DemoActionButton>
+            </>
+          )
+        }
+      >
+        {current && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 rounded-2xl border border-[var(--d-border)] bg-[var(--d-surface-2)] p-3">
+              <Avatar name={current.name} className="h-11 w-11 text-[13px]" />
+              <div className="min-w-0 flex-1">
+                <div className="text-[14px] font-semibold text-[var(--d-fg)]">{current.name}</div>
+                <div className="inline-flex items-center gap-1.5 text-[12px] text-[var(--d-muted)]">
+                  {current.branch} · {current.phone}
+                </div>
+              </div>
+              <Tag tone={APPT_META[current.status].tone}>{APPT_META[current.status].label}</Tag>
+            </div>
+
+            <Tabs
+              tabs={[
+                { id: "bilgiler", label: "Bilgiler" },
+                { id: "gecmis", label: "Geçmiş" },
+                { id: "odemeler", label: "Ödemeler" },
+              ]}
+              value={tab}
+              onChange={setTab}
+            />
+
+            {tab === "bilgiler" && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between rounded-xl border border-[var(--d-border)] px-3 py-2.5 text-[13px]">
+                  <span className="text-[var(--d-muted)]">Tedavi</span>
+                  <span className="font-semibold text-[var(--d-fg)]">{current.treatment}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <SelectField label="Saat" value={draft.time} onChange={(v) => setDraft((d) => ({ ...d, time: v }))} options={SLOTS} />
+                  <SelectField label="Hekim" value={draft.doctor} onChange={(v) => setDraft((d) => ({ ...d, doctor: v }))} options={[...DOCTOR_NAMES]} />
+                </div>
+                <p className="text-[11px] leading-relaxed text-[var(--d-faint)]">
+                  Saat veya hekimi değiştirip Kaydet&apos;e basın; randevu güncellenir ve takvim yeniden sıralanır.
+                </p>
+              </div>
+            )}
+
+            {tab === "gecmis" && (
+              <ul className="space-y-2">
+                {current.history.map((h) => (
+                  <li
+                    key={`${h.date}-${h.text}`}
+                    className="flex items-start gap-3 rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] px-3 py-2.5"
+                  >
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[var(--d-accent)]/12 text-[var(--d-accent)]">
+                      <ClipboardList className="h-3.5 w-3.5" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[12.5px] font-medium text-[var(--d-fg)]">{h.text}</div>
+                      <div className="text-[11px] text-[var(--d-faint)]">{h.date}</div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {tab === "odemeler" && (
+              <ul className="space-y-2">
+                {current.ledger.map((l) => (
+                  <li
+                    key={`${l.date}-${l.text}`}
+                    className="flex items-center gap-3 rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] px-3 py-2.5"
+                  >
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[var(--d-accent)]/12 text-[var(--d-accent)]">
+                      <Wallet className="h-3.5 w-3.5" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[12.5px] font-medium text-[var(--d-fg)]">{l.text}</div>
+                      <div className="text-[11px] text-[var(--d-faint)]">{l.date}</div>
+                    </div>
+                    <span className="text-[12.5px] font-semibold tabular-nums text-[var(--d-fg)]">₺{fmtTRY(l.amount)}</span>
+                    <Tag tone={l.paid ? "success" : "warn"}>{l.paid ? "Ödendi" : "Bekliyor"}</Tag>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+      </DemoModal>
+
+      {/* call waiting patient confirmation */}
+      <ConfirmDialog
+        open={confirmWait !== null}
+        title="Hasta muayeneye alınsın mı?"
+        message={
+          confirmWait
+            ? `${confirmWait.name} bekleme listesinden çıkarılıp hekim odasına yönlendirilecek.`
+            : ""
+        }
+        confirmLabel="Muayeneye Al"
+        cancelLabel="Vazgeç"
+        tone="accent"
+        onConfirm={() => confirmWait && callWaiting(confirmWait)}
+        onClose={() => setConfirmWait(null)}
+      />
     </BrowserFrame>
   );
 }

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { siteConfig } from "@/lib/i18n/dictionaries";
 import { type DemoTheme, themeVars } from "@/lib/demos/themes";
+import { DemoToastProvider } from "./interactive";
 import { cn } from "@/lib/utils";
 
 export const demoSerif = Playfair_Display({
@@ -189,11 +190,13 @@ export function DemoShell({
         serif && demoSerif.variable,
       )}
     >
-      <TopBar name={name} />
-      <main>{children}</main>
-      <DemoFooter name={name} sector={sector} />
-      <StickyWhatsApp />
-      <div className="h-20" />
+      <DemoToastProvider>
+        <TopBar name={name} />
+        <main>{children}</main>
+        <DemoFooter name={name} sector={sector} />
+        <StickyWhatsApp />
+        <div className="h-20" />
+      </DemoToastProvider>
     </div>
   );
 }

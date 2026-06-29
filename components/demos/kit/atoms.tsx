@@ -112,7 +112,7 @@ export function StatTile({
   icon: Icon,
 }: {
   label: string;
-  value: string;
+  value: ReactNode;
   delta?: string;
   deltaUp?: boolean;
   icon?: LucideIcon;
