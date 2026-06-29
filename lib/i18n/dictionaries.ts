@@ -3,6 +3,8 @@ export type Locale = "tr" | "en";
 export const locales: Locale[] = ["tr", "en"];
 export const defaultLocale: Locale = "tr";
 
+type DemoStatus = "live" | "ready" | "new";
+
 type Dictionary = {
   nav: {
     home: string;
@@ -35,21 +37,17 @@ type Dictionary = {
   demos: {
     title: string;
     subtitle: string;
-    ready: string;
-    soon: string;
     open: string;
-    problemLabel: string;
-    solutionLabel: string;
-    featuresLabel: string;
+    badges: Record<DemoStatus, string>;
     items: {
       slug: string;
       name: string;
       type: string;
-      status: "ready" | "soon";
-      problem: string;
-      solution: string;
+      status: DemoStatus;
+      href: string;
+      value: string;
       features: string[];
-      href?: string;
+      image: string;
     }[];
   };
   packages: {
@@ -93,16 +91,6 @@ type Dictionary = {
     rights: string;
     nav: string;
     social: string;
-  };
-  demoPages: {
-    backHome: string;
-    comingSoon: string;
-    comingSoonDesc: string;
-    contactCta: string;
-    previewLabel: string;
-    benefitsTitle: string;
-    benefits: string[];
-    stickyCta: string;
   };
 };
 
@@ -209,110 +197,99 @@ export const dictionaries: Record<Locale, Dictionary> = {
     demos: {
       title: "Demolar",
       subtitle:
-        "Farklı sektörler için tasarladığım gerçek ürün örneklerini inceleyin.",
-      ready: "Hazır Demo",
-      soon: "Yakında",
+        "Sadece web sitesi değil — yerel işletmeler için tasarladığım sektöre özel dijital işletme sistemleri.",
       open: "Demoyu Aç",
-      problemLabel: "Sorun",
-      solutionLabel: "Çözüm",
-      featuresLabel: "Öne Çıkan Özellikler",
+      badges: { live: "Canlı Demo", ready: "Hazır Demo", new: "Yeni" },
       items: [
         {
           slug: "puruze-caffe",
-          name: "Püruze Caffe Web Sitesi Yenileme",
-          type: "Kafe / Restoran Web Sitesi",
-          status: "ready",
+          name: "Püruze Caffe",
+          type: "Kafe Web Sitesi · Yenileme",
+          status: "live",
           href: "/puruze-caffe",
-          problem:
-            "Eski, Wix tarzı site; zayıf görsel sunum, net çağrı butonları ve mobil deneyim eksik.",
-          solution:
-            "Kuzguncuk'ta yer alan Püruze Caffe için hazırlanan premium web sitesi demo çalışması.",
+          value:
+            "Kuzguncuk'taki Püruze Caffe için sıcak, premium ve mobil öncelikli web sitesi yenilemesi.",
           features: [
-            "Sıcak, premium kafe tasarımı",
-            "Menü, galeri ve sosyal kanıt",
-            "Yol tarifi, rezervasyon ve arama",
-            "Mobil öncelikli ve SEO uyumlu",
+            "Menü, galeri ve rezervasyon",
+            "Yol tarifi ve tek dokunuş arama",
+            "SEO uyumlu, hızlı altyapı",
           ],
+          image: "/assets/puruze-caffe-preview.webp",
         },
         {
-          slug: "beauty-crm",
-          name: "Güzellik Kliniği CRM",
-          type: "Güzellik & Estetik",
+          slug: "kuafor-os",
+          name: "Kuaför OS",
+          type: "Berber & Kuaför Yönetim Sistemi",
           status: "ready",
-          problem:
-            "Randevular dağınık, müşteri geçmişi takip edilemiyor, satışlar kaçıyor.",
-          solution:
-            "Müşteri, randevu ve satış takibini tek panelde toplayan özel CRM.",
+          href: "/demos/kuafor-os",
+          value:
+            "Randevudan gelire kadar tüm salonu tek panelden yöneten dijital işletme sistemi.",
           features: [
-            "Müşteri kartları ve geçmiş",
-            "Otomatik randevu hatırlatma",
+            "Online randevu & WhatsApp hatırlatma",
+            "Personel ve müşteri yönetimi",
+            "Gelir ve performans paneli",
+          ],
+          image: "/assets/barber-preview.webp",
+        },
+        {
+          slug: "beauty-center-crm",
+          name: "Beauty Center CRM",
+          type: "Güzellik & Estetik CRM",
+          status: "ready",
+          href: "/demos/beauty-center-crm",
+          value:
+            "Müşteri, randevu, paket ve seans takibini tek panelde toplayan estetik merkezi CRM'i.",
+          features: [
             "Paket ve seans takibi",
-            "Gelir raporları",
+            "Müşteri kartları ve geçmiş",
+            "Otomatik hatırlatma & gelir raporu",
           ],
+          image: "/assets/beauty-crm-preview.webp",
         },
         {
-          slug: "barber",
-          name: "Berber Web Sitesi",
-          type: "Berber & Kuaför",
-          status: "ready",
-          problem:
-            "Telefonla randevu yoğunluğu, kaçan müşteriler ve zayıf dijital görünüm.",
-          solution:
-            "Online randevu alan, hizmetleri sergileyen modern bir web sitesi.",
-          features: [
-            "Online randevu",
-            "Hizmet ve fiyat vitrini",
-            "Galeri ve yorumlar",
-            "Harita ve iletişim",
-          ],
-        },
-        {
-          slug: "clinic",
-          name: "Klinik Randevu Sistemi",
-          type: "Sağlık & Klinik",
-          status: "ready",
-          problem:
-            "Hasta yoğunluğu, çakışan randevular ve manuel takip yükü.",
-          solution:
-            "Hekim takvimine entegre, otomatik onaylı online randevu sistemi.",
+          slug: "clinic-os",
+          name: "ClinicOS",
+          type: "Klinik & Hasta Yönetimi",
+          status: "new",
+          href: "/demos/clinic-os",
+          value:
+            "Hekim takvimi, hasta kayıtları ve ödeme takibini tek ekranda birleştiren klinik sistemi.",
           features: [
             "Hekim bazlı takvim",
-            "Otomatik onay & hatırlatma",
-            "Hasta kayıt formu",
-            "SMS / WhatsApp bildirimi",
+            "Hasta kayıt ve geçmişi",
+            "Ödeme ve hatırlatma takibi",
           ],
+          image: "/assets/clinic-preview.webp",
         },
         {
-          slug: "real-estate",
-          name: "Emlak Platformu",
-          type: "Emlak & Gayrimenkul",
-          status: "soon",
-          problem:
-            "İlanlar dağınık, portföy yönetimi zor, müşteri eşleştirmesi yavaş.",
-          solution:
-            "Filtrelenebilir ilan vitrini ve portföy yönetim paneli.",
+          slug: "estate-os",
+          name: "EstateOS",
+          type: "Emlak Yönetim Platformu",
+          status: "new",
+          href: "/demos/estate-os",
+          value:
+            "Portföy, ilanlar, müşteri ve lead'leri tek platformda yöneten emlak işletme sistemi.",
           features: [
-            "Gelişmiş ilan filtreleme",
-            "Portföy yönetimi",
-            "Harita üzerinde ilanlar",
-            "Talep eşleştirme",
+            "Portföy ve ilan yönetimi",
+            "Lead pipeline takibi",
+            "Komisyon ve danışman paneli",
           ],
+          image: "/assets/real-estate-preview.webp",
         },
         {
-          slug: "restaurant",
-          name: "Restoran Web Sitesi",
-          type: "Restoran & Kafe",
-          status: "soon",
-          problem:
-            "Dijital menü yok, rezervasyon telefonla, online görünürlük zayıf.",
-          solution:
-            "Dijital menü, online rezervasyon ve sipariş yönlendirmeli site.",
+          slug: "restaurant-os",
+          name: "RestaurantOS",
+          type: "Restoran & Kafe Yönetimi",
+          status: "new",
+          href: "/demos/restaurant-os",
+          value:
+            "Dijital menü, QR sipariş, rezervasyon ve masa yönetimini tek sistemde toplayan çözüm.",
           features: [
-            "Dijital menü",
-            "Online rezervasyon",
-            "Sipariş yönlendirme",
-            "Galeri ve kampanyalar",
+            "QR dijital menü",
+            "Masa ve rezervasyon yönetimi",
+            "Günlük satış ve kampanyalar",
           ],
+          image: "/assets/restaurant-preview.webp",
         },
       ],
     },
@@ -402,22 +379,6 @@ export const dictionaries: Record<Locale, Dictionary> = {
       rights: "Tüm hakları saklıdır.",
       nav: "Menü",
       social: "Sosyal",
-    },
-    demoPages: {
-      backHome: "Ana Sayfaya Dön",
-      comingSoon: "Bu demo hazırlanıyor",
-      comingSoonDesc:
-        "Bu sektöre özel demo şu anda geliştiriliyor. Detaylar için benimle iletişime geçebilirsiniz.",
-      contactCta: "İletişime Geç",
-      previewLabel: "Canlı Önizleme",
-      benefitsTitle: "İşletmenize Kazanımları",
-      benefits: [
-        "Daha profesyonel bir dijital görünüm",
-        "Daha fazla müşteri ve dönüşüm",
-        "Daha az manuel iş, daha çok otomasyon",
-        "Her cihazda hızlı ve kusursuz deneyim",
-      ],
-      stickyCta: "WhatsApp'tan Sor",
     },
   },
   en: {
@@ -514,118 +475,106 @@ export const dictionaries: Record<Locale, Dictionary> = {
         },
         {
           title: "AI Automations",
-          description:
-            "Automate repetitive tasks with AI-powered workflows.",
+          description: "Automate repetitive tasks with AI-powered workflows.",
         },
       ],
     },
     demos: {
       title: "Demos",
       subtitle:
-        "Explore real product examples I've designed for different industries.",
-      ready: "Live Demo",
-      soon: "Coming Soon",
+        "Not just websites — sector-specific digital business systems I design for local businesses.",
       open: "Open Demo",
-      problemLabel: "Problem",
-      solutionLabel: "Solution",
-      featuresLabel: "Key Features",
+      badges: { live: "Live Demo", ready: "Ready Demo", new: "New" },
       items: [
         {
           slug: "puruze-caffe",
-          name: "Püruze Caffe Website Redesign",
-          type: "Cafe / Restaurant Website",
-          status: "ready",
+          name: "Püruze Caffe",
+          type: "Cafe Website · Redesign",
+          status: "live",
           href: "/puruze-caffe",
-          problem:
-            "An outdated, Wix-like site with weak visuals, unclear CTAs and a poor mobile experience.",
-          solution:
-            "A premium website demo crafted for Püruze Caffe, a cozy cafe in Kuzguncuk, İstanbul.",
+          value:
+            "A warm, premium, mobile-first website redesign for Püruze Caffe in Kuzguncuk, İstanbul.",
           features: [
-            "Warm, premium cafe design",
-            "Menu, gallery & social proof",
-            "Directions, reservation & call",
-            "Mobile-first and SEO-friendly",
+            "Menu, gallery & reservations",
+            "Directions & one-tap call",
+            "Fast, SEO-friendly foundation",
           ],
+          image: "/assets/puruze-caffe-preview.webp",
         },
         {
-          slug: "beauty-crm",
-          name: "Beauty Clinic CRM",
-          type: "Beauty & Aesthetics",
+          slug: "kuafor-os",
+          name: "Kuaför OS",
+          type: "Barber & Salon Management System",
           status: "ready",
-          problem:
-            "Scattered appointments, untracked customer history and lost sales.",
-          solution:
-            "A custom CRM bringing customers, appointments and sales into one panel.",
+          href: "/demos/kuafor-os",
+          value:
+            "A digital operating system that runs the whole salon — from booking to revenue — in one panel.",
           features: [
-            "Customer profiles & history",
-            "Automated appointment reminders",
+            "Online booking & WhatsApp reminders",
+            "Staff & customer management",
+            "Revenue & performance dashboard",
+          ],
+          image: "/assets/barber-preview.webp",
+        },
+        {
+          slug: "beauty-center-crm",
+          name: "Beauty Center CRM",
+          type: "Beauty & Aesthetics CRM",
+          status: "ready",
+          href: "/demos/beauty-center-crm",
+          value:
+            "A CRM that brings customers, appointments, packages and session tracking into one panel.",
+          features: [
             "Package & session tracking",
-            "Revenue reports",
+            "Customer profiles & history",
+            "Automated reminders & revenue reports",
           ],
+          image: "/assets/beauty-crm-preview.webp",
         },
         {
-          slug: "barber",
-          name: "Barber Website",
-          type: "Barber & Salon",
-          status: "ready",
-          problem:
-            "Overwhelming phone bookings, lost customers and a weak digital presence.",
-          solution:
-            "A modern website that takes online bookings and showcases services.",
-          features: [
-            "Online booking",
-            "Service & price showcase",
-            "Gallery & reviews",
-            "Map & contact",
-          ],
-        },
-        {
-          slug: "clinic",
-          name: "Clinic Appointment System",
-          type: "Healthcare & Clinic",
-          status: "ready",
-          problem:
-            "Patient load, overlapping appointments and manual tracking overhead.",
-          solution:
-            "An online booking system integrated with the doctor's calendar with auto-confirmation.",
+          slug: "clinic-os",
+          name: "ClinicOS",
+          type: "Clinic & Patient Management",
+          status: "new",
+          href: "/demos/clinic-os",
+          value:
+            "A clinic system uniting doctor calendars, patient records and payment tracking on one screen.",
           features: [
             "Per-doctor calendar",
-            "Auto confirm & reminders",
-            "Patient intake form",
-            "SMS / WhatsApp notifications",
+            "Patient records & history",
+            "Payment & reminder tracking",
           ],
+          image: "/assets/clinic-preview.webp",
         },
         {
-          slug: "real-estate",
-          name: "Real Estate Platform",
-          type: "Real Estate",
-          status: "soon",
-          problem:
-            "Scattered listings, hard portfolio management and slow customer matching.",
-          solution:
-            "A filterable listing showcase with a portfolio management panel.",
+          slug: "estate-os",
+          name: "EstateOS",
+          type: "Real Estate Platform",
+          status: "new",
+          href: "/demos/estate-os",
+          value:
+            "A real estate operating system managing portfolio, listings, clients and leads in one place.",
           features: [
-            "Advanced listing filters",
-            "Portfolio management",
-            "Listings on the map",
-            "Demand matching",
+            "Portfolio & listing management",
+            "Lead pipeline tracking",
+            "Commission & agent dashboard",
           ],
+          image: "/assets/real-estate-preview.webp",
         },
         {
-          slug: "restaurant",
-          name: "Restaurant Website",
-          type: "Restaurant & Café",
-          status: "soon",
-          problem:
-            "No digital menu, phone-only reservations and weak online visibility.",
-          solution:
-            "A site with a digital menu, online reservations and order routing.",
+          slug: "restaurant-os",
+          name: "RestaurantOS",
+          type: "Restaurant & Café Management",
+          status: "new",
+          href: "/demos/restaurant-os",
+          value:
+            "A system uniting digital menu, QR ordering, reservations and table management.",
           features: [
-            "Digital menu",
-            "Online reservations",
-            "Order routing",
-            "Gallery & promotions",
+            "QR digital menu",
+            "Table & reservation management",
+            "Daily sales & campaigns",
           ],
+          image: "/assets/restaurant-preview.webp",
         },
       ],
     },
@@ -715,22 +664,6 @@ export const dictionaries: Record<Locale, Dictionary> = {
       rights: "All rights reserved.",
       nav: "Menu",
       social: "Social",
-    },
-    demoPages: {
-      backHome: "Back to Home",
-      comingSoon: "This demo is in progress",
-      comingSoonDesc:
-        "A demo tailored to this industry is currently being built. Reach out for details.",
-      contactCta: "Get in Touch",
-      previewLabel: "Live Preview",
-      benefitsTitle: "What Your Business Gains",
-      benefits: [
-        "A more professional digital presence",
-        "More customers and conversions",
-        "Less manual work, more automation",
-        "A fast, flawless experience on every device",
-      ],
-      stickyCta: "Ask on WhatsApp",
     },
   },
 };

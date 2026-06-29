@@ -25,7 +25,8 @@ project `cenk-emir-bat`.
 - [x] i18n via React context + typed dictionaries (`lib/i18n/dictionaries.ts`), TR default, client-side switch
 - [x] Sections: Hero, Business Value, Services, Demos, Packages, About, Contact
 - [x] Sticky glass navbar w/ language switcher + WhatsApp + CTA; floating WhatsApp button
-- [x] Demo placeholder routes with product mockups: `/demos/{beauty-crm,barber,clinic,real-estate,restaurant}`
+- [x] ~~Demo placeholder routes~~ → **replaced** by the standalone sector-demo suite below
+      (old `/demos/{beauty-crm,barber,clinic,real-estate,restaurant}` now 301-redirect to the new branded routes)
 - [x] SEO: metadata, generated Open Graph image (forced `image/png` via `vercel.json`), `robots.txt`, `sitemap.xml`
 - [x] Preserved separate-product assets: `content-machine/` legal pages + TikTok verification files
 
@@ -76,6 +77,43 @@ project `cenk-emir-bat`.
 - [x] Portfolio card added to the Demos section (links out to `/puruze-caffe`, marked Live);
       demo items now support an optional `href` for standalone demos
 - [x] "Demo · Tasarım: Cenk Emir Bat" ribbon + footer credit linking back to the portfolio
+
+### Sector demo suite — real, sector-specific business systems (2026-06-29)
+Positioning: *"Sadece web sitesi değil — sektöre özel dijital işletme sistemleri."*
+The thin, generic `/demos/*` detail pages were replaced by 5 standalone, **Turkish-only**,
+self-themed demo pages, each mirroring the proven Püruze pattern (top-level routes outside
+the dark `(site)` group, own theme, back-to-portfolio ribbon, sticky WhatsApp, footer credit).
+- [x] Shared, reusable demo kit — `components/demos/kit/` (`DemoShell`, `DemoHero`, `Section`,
+      `ProblemSection`, `SolutionSection`, `DemoStage`, `FeatureGrid`, `Scenario`, `PricingCards`,
+      `FinalCTA`, `DemoButton`) + mockup atoms (`BrowserFrame`, `PhoneFrame`, `Panel`, `StatTile`,
+      `MiniBars`, `Sparkline`, `Donut`, `Bar`, `Avatar`, `Tag`)
+- [x] Per-sector theming via CSS variables — `lib/demos/themes.ts` (`--d-*` tokens), so one kit
+      renders every palette; apply with `themeVars(theme)` on the shell
+- [x] **Kuaför OS** `/demos/kuafor-os` — graphite/gold; salon dashboard (randevular, personel
+      programı, popüler hizmetler, gelir, WhatsApp hatırlatma)
+- [x] **Beauty Center CRM** `/demos/beauty-center-crm` — cream/gold (serif); signature **paket &
+      seans takibi** (Donut + Bar), müşteri/cilt kartı, önce-sonra galeri, gelir
+- [x] **ClinicOS** `/demos/clinic-os` — white/blue medical; hekim takvimi, bekleyen hastalar,
+      ödeme takibi, doluluk; çok branş (diş / fizik tedavi / diyetisyen / muayenehane)
+- [x] **EstateOS** `/demos/estate-os` — navy/gold (serif); portföy/ilanlar, lead pipeline,
+      danışman görevleri, komisyon
+- [x] **RestaurantOS** `/demos/restaurant-os` — dark/amber (serif); masa durumu grid, QR dijital
+      menü (telefon çerçevesi), online sipariş, popüler ürünler, Google yorum CTA
+- [x] Each page: Hero → Sorun → Çözüm → canlı kodlanmış panel (#panel) → Özellikler (6–10) →
+      Örnek Senaryo → Paketler (Başlangıç/Profesyonel/Premium) → final CTA. Interactive areas are
+      **coded React mockups** (crisp, legible, themeable) — not images
+- [x] Demo cards redesigned (cleaner, image-forward, less text): kategori · ad · değer önerisi ·
+      3 madde · durum rozeti (Canlı Demo / Hazır Demo / Yeni) · "Demoyu Aç"; whole card clickable
+- [x] 10 text-free sector ambiance photos generated (gpt-image-1) in `public/demos/<sector>/`
+- [x] Per-demo branded **Open Graph images** (code-rendered `ImageResponse`, 1200×630, per-sector
+      theme + name) via `app/demos/<slug>/opengraph-image.tsx` + shared `lib/demos/og.tsx`;
+      content-type forced in `vercel.json`. Wires `og:image` + `twitter:image` (summary_large_image)
+- [x] RestaurantOS QR menu is **interactive** — tapping a category chip switches the menu items and
+      live cart total (`useState` in `RestaurantSite`)
+- [x] Theme-aware status colors (`--d-pos/--d-warn/--d-neg`) so green/amber/red read on the light
+      themes (Beauty/Clinic); revenue values de-ambiguated (e.g. `₺18.600`)
+- [x] Old routes 301-redirect (`vercel.json`), `sitemap.ts` updated; `DemoDetail.tsx` + `Mockups.tsx`
+      removed; built with `next build` — all 21 routes static (incl. OG images), 0 TS errors
 
 ---
 

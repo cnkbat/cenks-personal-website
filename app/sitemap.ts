@@ -7,12 +7,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const base = siteConfig.url;
   const now = new Date();
 
-  const demoSlugs = [
-    "beauty-crm",
-    "barber",
-    "clinic",
-    "real-estate",
-    "restaurant",
+  // Standalone, self-themed demo routes.
+  const demoPaths = [
+    "/puruze-caffe",
+    "/demos/kuafor-os",
+    "/demos/beauty-center-crm",
+    "/demos/clinic-os",
+    "/demos/estate-os",
+    "/demos/restaurant-os",
   ];
 
   return [
@@ -22,11 +24,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 1,
     },
-    ...demoSlugs.map((slug) => ({
-      url: `${base}/demos/${slug}`,
+    ...demoPaths.map((path) => ({
+      url: `${base}${path}`,
       lastModified: now,
       changeFrequency: "monthly" as const,
-      priority: 0.7,
+      priority: 0.8,
     })),
   ];
 }

@@ -1,8 +1,19 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "redirects": [
+    { "source": "/demos/barber", "destination": "/demos/kuafor-os", "permanent": true },
+    { "source": "/demos/beauty-crm", "destination": "/demos/beauty-center-crm", "permanent": true },
+    { "source": "/demos/clinic", "destination": "/demos/clinic-os", "permanent": true },
+    { "source": "/demos/real-estate", "destination": "/demos/estate-os", "permanent": true },
+    { "source": "/demos/restaurant", "destination": "/demos/restaurant-os", "permanent": true }
+  ],
   "headers": [
     {
       "source": "/opengraph-image",
+      "headers": [{ "key": "Content-Type", "value": "image/png" }]
+    },
+    {
+      "source": "/demos/:slug/opengraph-image",
       "headers": [{ "key": "Content-Type", "value": "image/png" }]
     },
     {
