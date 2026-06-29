@@ -27,9 +27,13 @@ export function Footer() {
       <div className="mx-auto flex max-w-6xl flex-col gap-10 md:flex-row md:items-start md:justify-between">
         <div className="max-w-xs">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[linear-gradient(135deg,#7c5cff,#22d3ee)] text-sm font-bold text-white">
-              CB
-            </span>
+            <img
+              src="/assets/cenk-profile.webp"
+              alt="Cenk Emir Bat"
+              width={36}
+              height={36}
+              className="h-9 w-9 rounded-xl object-cover ring-1 ring-white/15"
+            />
             <span className="text-[15px] font-semibold tracking-tight text-white">
               Cenk Emir Bat
             </span>
