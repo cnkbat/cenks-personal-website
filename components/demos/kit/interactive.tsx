@@ -443,6 +443,34 @@ export function SelectField({
 }
 
 /* ------------------------- Filter chips ------------------------- */
+export function Toggle({
+  checked,
+  onChange,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className={cn(
+        "relative h-6 w-11 shrink-0 rounded-full transition-colors",
+        checked ? "bg-[var(--d-accent)]" : "border border-[var(--d-border)] bg-[var(--d-surface-2)]",
+      )}
+    >
+      <span
+        className={cn(
+          "absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all",
+          checked ? "left-[1.375rem]" : "left-0.5",
+        )}
+      />
+    </button>
+  );
+}
+
 export function FilterChips({
   options,
   value,

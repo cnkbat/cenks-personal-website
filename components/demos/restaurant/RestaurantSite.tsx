@@ -11,41 +11,55 @@ import {
   Clock,
   Coffee,
   CreditCard,
+  Download,
+  FileText,
   LayoutDashboard,
   MessageCircle,
   Megaphone,
   Minus,
+  Pause,
+  Play,
   Plus,
   QrCode,
   Salad,
   Send,
+  Settings,
   Star,
   TrendingUp,
   UtensilsCrossed,
   Wallet,
 } from "lucide-react";
 import {
+  AnimatedView,
   Bar,
   BrowserFrame,
+  DemoActionButton,
+  DemoClosingCTA,
   DemoCounter,
   DemoHero,
+  DemoMobileNav,
   DemoShell,
+  DemoSidebar,
   DemoStage,
   FeatureGrid,
-  FinalCTA,
   IconButton,
   Panel,
   PhoneFrame,
+  PresentationMode,
   PricingCards,
   ProblemSection,
   Scenario,
   Section,
+  SelectField,
   SolutionSection,
   Sparkline,
   StatTile,
   Tag,
+  Toggle,
   demoThemes,
   useDemoToast,
+  type PresentationStep,
+  type SidebarItem,
 } from "@/components/demos/kit";
 
 /* --------------------------- demo data --------------------------- */
@@ -271,6 +285,44 @@ const SCENARIO_STEPS = [
   { time: "Kapanış", text: "Gün sonu ciro, en çok satan ürünler ve masa doluluğu rapordan görünüyor; memnun müşterilere otomatik Google yorum linki gidiyor." },
 ];
 
+/* active campaigns */
+type Campaign = {
+  id: number;
+  title: string;
+  desc: string;
+  uses: string;
+  extra: string;
+  running: boolean;
+};
+const INITIAL_CAMPAIGNS: Campaign[] = [
+  { id: 1, title: "Hafta İçi Öğle Menüsü · %20 İndirim", desc: "12:00 – 15:00 arası QR menüden verilen ana yemeklerde geçerli.", uses: "148 kez", extra: "₺19.400", running: true },
+  { id: 2, title: "2 Kahve 1 Tatlı Bedava", desc: "Aynı adisyonda 2 kahve alana San Sebastian ikram.", uses: "92 kez", extra: "₺6.200", running: true },
+  { id: 3, title: "Akşam Erken Rezervasyon · %15", desc: "18:00 – 19:30 arası rezervasyonlarda geçerli kampanya.", uses: "37 kez", extra: "₺4.850", running: false },
+];
+
+/* --------------------------- sidebar & presentation --------------------------- */
+const SIDEBAR: SidebarItem[] = [
+  { id: "genel", icon: LayoutDashboard, label: "Genel Bakış" },
+  { id: "menu", icon: QrCode, label: "Menü" },
+  { id: "siparisler", icon: CreditCard, label: "Siparişler" },
+  { id: "masalar", icon: UtensilsCrossed, label: "Masalar" },
+  { id: "rezervasyonlar", icon: CalendarCheck, label: "Rezervasyonlar" },
+  { id: "mutfak", icon: ChefHat, label: "Mutfak" },
+  { id: "kampanyalar", icon: Megaphone, label: "Kampanyalar" },
+  { id: "raporlar", icon: FileText, label: "Raporlar" },
+  { id: "ayarlar", icon: Settings, label: "Ayarlar" },
+];
+
+const STEPS: PresentationStep[] = [
+  { view: "menu", title: "Dijital Menü", text: "Menünüzü saniyede güncellersiniz; matbaa masrafı ve eski menü sorunu biter.", action: "Bir kategoriye geçip ürünleri gösterin." },
+  { view: "siparisler", title: "QR Sipariş Akışı", text: "Müşteri masadaki QR'ı okutup kendi siparişini verir; sipariş anında sisteme düşer.", action: "Online siparişlerin tek ekranda toplandığını gösterin." },
+  { view: "masalar", title: "Masa Durumları", text: "Boş, dolu ve rezerve masaları tek ekranda renkli görürsünüz.", action: "Bir masaya tıklayıp durumunu değiştirin." },
+  { view: "rezervasyonlar", title: "Rezervasyonlar", text: "Günün rezervasyonlarını ve durumlarını tek yerden yönetirsiniz.", action: "Bir rezervasyonu onaylayın." },
+  { view: "mutfak", title: "Mutfak Siparişleri", text: "Siparişler anında mutfağa düşer, hazırlık durumu takip edilir.", action: "Bir siparişi 'Hazır' olarak işaretleyin." },
+  { view: "genel", title: "Günlük Ciro", text: "Günlük cironuzu, en çok satan ürünleri ve yoğunluğu net görürsünüz.", action: "Ciro ve popüler ürün kartlarını gösterin." },
+  { view: "genel", title: "Size Özel Kurulum", text: "Bu sistem işletmenizin menüsüne, masa düzenine ve çalışma şekline göre özelleştirilebilir.", action: "Sunumu bitirip teklif aşamasına geçin." },
+];
+
 /* --------------------------- the dashboard mockup --------------------------- */
 const BASE_CIRO = 48700;
 
@@ -286,6 +338,26 @@ function RestaurantPanel() {
   const [reservations, setReservations] = useState(INITIAL_RESERVATIONS);
   const [extraCiro, setExtraCiro] = useState(0);
   const [orderSeq, setOrderSeq] = useState(4822);
+  const [campaigns, setCampaigns] = useState<Campaign[]>(INITIAL_CAMPAIGNS);
+  const [itemActive, setItemActive] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(MENU.flatMap((m) => m.items).map((it) => [it.name, true])),
+  );
+
+  /* ---- view / presentation ---- */
+  const [view, setView] = useState("genel");
+  const [presentOpen, setPresentOpen] = useState(false);
+
+  /* ---- settings ---- */
+  const [settings, setSettings] = useState({
+    qrSiparis: true,
+    onlineRezervasyon: true,
+    whatsapp: true,
+    googleYorum: true,
+    stokUyari: false,
+  });
+  const [workHours, setWorkHours] = useState("10:00 – 24:00");
+  const [serviceFee, setServiceFee] = useState("Yok");
+  const [currency, setCurrency] = useState("₺ Türk Lirası");
 
   const activeItems = MENU.find((m) => m.cat === activeCat)!.items;
 
@@ -426,478 +498,856 @@ function RestaurantPanel() {
     );
   }
 
-  return (
-    <BrowserFrame url="restaurantos.app/pano">
-      <div className="grid gap-3 lg:grid-cols-[180px_1fr]">
-        {/* sidebar */}
-        <aside className="hidden flex-col gap-1 rounded-xl bg-[var(--d-bg-soft)] p-3 lg:flex">
-          <div className="mb-2 flex items-center gap-2 px-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--d-accent)] text-[var(--d-accent-fg)]">
-              <UtensilsCrossed className="h-4 w-4" />
-            </span>
-            <span className="text-[13px] font-bold text-[var(--d-fg)]">RestaurantOS</span>
-          </div>
-          {[
-            { icon: LayoutDashboard, label: "Pano", active: true },
-            { icon: UtensilsCrossed, label: "Masalar" },
-            { icon: QrCode, label: "QR Menü" },
-            { icon: CreditCard, label: "Siparişler" },
-            { icon: CalendarCheck, label: "Rezervasyon" },
-            { icon: Wallet, label: "Ciro" },
-          ].map((n) => (
-            <span
-              key={n.label}
-              className={
-                "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12px] font-medium " +
-                (n.active
-                  ? "bg-[var(--d-accent)]/15 text-[var(--d-accent)]"
-                  : "text-[var(--d-muted)]")
-              }
+  /* ---- campaign actions ---- */
+  function toggleCampaign(id: number) {
+    setCampaigns((prev) =>
+      prev.map((c) => {
+        if (c.id !== id) return c;
+        const running = !c.running;
+        toast({
+          title: running ? "Kampanya başlatıldı" : "Kampanya durduruldu",
+          desc: c.title,
+          tone: running ? "success" : "warn",
+          icon: Megaphone,
+        });
+        return { ...c, running };
+      }),
+    );
+  }
+
+  /* ---------- shared rows ---------- */
+  function orderRow(o: Order) {
+    const done = o.status === "Servis edildi";
+    return (
+      <motion.li
+        key={o.code}
+        layout
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+        className="flex items-center gap-3 rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] px-3 py-2.5"
+      >
+        <span className="w-12 shrink-0 text-[12px] font-semibold tabular-nums text-[var(--d-accent)]">
+          {o.code}
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-[12.5px] font-medium text-[var(--d-fg)]">{o.channel}</div>
+          <div className="truncate text-[11px] text-[var(--d-faint)]">{o.items}</div>
+        </div>
+        <div className="flex flex-col items-end gap-1.5">
+          <span className="text-[12px] font-bold text-[var(--d-fg)]">₺{fmtTRY(o.total)}</span>
+          {done ? (
+            <Tag tone={orderTone[o.status]}>
+              <Check className="h-2.5 w-2.5" /> {o.status}
+            </Tag>
+          ) : (
+            <button
+              type="button"
+              onClick={() => advanceOrder(o.code)}
+              className="inline-flex items-center gap-1 rounded-full bg-[var(--d-accent)]/15 px-2 py-0.5 text-[10px] font-semibold text-[var(--d-accent)] transition-colors hover:bg-[var(--d-accent)]/25"
             >
-              <n.icon className="h-4 w-4" />
-              {n.label}
-            </span>
-          ))}
-        </aside>
+              <ChefHat className="h-2.5 w-2.5" /> {o.status} → {orderNext[o.status]}
+            </button>
+          )}
+        </div>
+      </motion.li>
+    );
+  }
 
-        {/* main */}
-        <div className="space-y-3">
-          {/* stats */}
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <StatTile
-              label="Bugünkü Ciro"
-              value={<DemoCounter value={ciro} format={(n) => `₺${fmtTRY(n)}`} />}
-              delta="+22%"
-              icon={Wallet}
-            />
-            <StatTile
-              label="Aktif Masa"
-              value={
-                <span>
-                  <DemoCounter value={aktifMasa} />
-                  <span className="text-[var(--d-faint)]">/{tables.length}</span>
-                </span>
-              }
-              delta="+3"
-              icon={UtensilsCrossed}
-            />
-            <StatTile
-              label="Online Sipariş"
-              value={<DemoCounter value={onlineCount} />}
-              delta="+11"
-              icon={CreditCard}
-            />
-            <StatTile
-              label="Rezervasyon"
-              value={<DemoCounter value={rezCount} />}
-              delta="+2"
-              icon={CalendarCheck}
-            />
-          </div>
+  function reservationRow(r: { res: Reservation; status: ResStatus }) {
+    return (
+      <li
+        key={r.res.id}
+        className="flex items-center gap-3 rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] px-3 py-2.5"
+      >
+        <span className="w-11 shrink-0 text-[12px] font-semibold tabular-nums text-[var(--d-accent)]">
+          {r.res.time}
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-[12.5px] font-medium text-[var(--d-fg)]">{r.res.name}</div>
+          <div className="truncate text-[11px] text-[var(--d-faint)]">{r.res.people}</div>
+        </div>
+        <button
+          type="button"
+          onClick={() => toggleReservation(r.res.id)}
+          aria-label="Durumu değiştir"
+          className="transition-transform active:scale-95"
+        >
+          <motion.span
+            key={r.status}
+            initial={{ scale: 0.6, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <Tag tone={resTone[r.status]}>
+              {r.status === "Onaylı" ? <Check className="h-2.5 w-2.5" /> : <Clock className="h-2.5 w-2.5" />}
+              {r.status}
+            </Tag>
+          </motion.span>
+        </button>
+      </li>
+    );
+  }
 
-          {/* table grid + qr menu phone */}
-          <div className="grid gap-3 lg:grid-cols-[1.35fr_1fr]">
-            <Panel title="Masa Durumu" action="Dokun · durumu değiştir">
-              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-                {tables.map((t) => (
-                  <button
-                    key={t.no}
-                    type="button"
-                    onClick={() => cycleTable(t.no)}
-                    className="rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] p-2.5 text-left transition-all hover:border-[var(--d-accent)]/50 active:scale-[0.97]"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-[12px] font-bold text-[var(--d-fg)]">
-                        {t.no}
-                      </span>
-                      <motion.span
-                        key={t.state}
-                        initial={{ scale: 0.6, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-                      >
-                        <Tag tone={tableTone[t.state]}>{t.state}</Tag>
-                      </motion.span>
-                    </div>
-                    <div className="mt-1.5 truncate text-[10px] text-[var(--d-faint)]">
-                      {t.info}
-                    </div>
-                  </button>
-                ))}
+  /* ---------- the QR menu phone (reused in genel + menu) ---------- */
+  function qrMenuPhone() {
+    return (
+      <PhoneFrame className="mx-auto w-full max-w-[280px]">
+        <div className="px-3 pb-4 pt-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-[12px] font-bold text-[var(--d-fg)]">Lezzet Durağı</div>
+              <div className="inline-flex items-center gap-1 text-[10px] text-[var(--d-faint)]">
+                <QrCode className="h-3 w-3" /> QR Dijital Menü · Masa M5
               </div>
-              <div className="mt-3 flex flex-wrap items-center gap-3 text-[10px] text-[var(--d-muted)]">
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-[var(--d-pos)]" /> Boş ·{" "}
-                  <span className="font-semibold text-[var(--d-fg)]">
-                    <DemoCounter value={counts["Boş"]} />
-                  </span>
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-[var(--d-neg)]" /> Dolu ·{" "}
-                  <span className="font-semibold text-[var(--d-fg)]">
-                    <DemoCounter value={counts["Dolu"]} />
-                  </span>
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-[var(--d-warn)]" /> Rezerve ·{" "}
-                  <span className="font-semibold text-[var(--d-fg)]">
-                    <DemoCounter value={counts["Rezerve"]} />
-                  </span>
-                </span>
-              </div>
-            </Panel>
-
-            {/* QR digital menu in a phone */}
-            <PhoneFrame className="mx-auto w-full max-w-[280px]">
-              <div className="px-3 pb-4 pt-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-[12px] font-bold text-[var(--d-fg)]">
-                      Lezzet Durağı
-                    </div>
-                    <div className="inline-flex items-center gap-1 text-[10px] text-[var(--d-faint)]">
-                      <QrCode className="h-3 w-3" /> QR Dijital Menü · Masa M5
-                    </div>
-                  </div>
-                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--d-accent)]/15 text-[var(--d-accent)]">
-                    <Coffee className="h-3.5 w-3.5" />
-                  </span>
-                </div>
-
-                {/* category chips — tap to switch (live demo) */}
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {MENU.map((m) => {
-                    const active = m.cat === activeCat;
-                    return (
-                      <button
-                        key={m.cat}
-                        type="button"
-                        onClick={() => setActiveCat(m.cat)}
-                        className={
-                          "cursor-pointer rounded-full px-2.5 py-1 text-[10px] font-semibold transition-colors " +
-                          (active
-                            ? "bg-[var(--d-accent)] text-[var(--d-accent-fg)]"
-                            : "border border-[var(--d-border)] text-[var(--d-muted)] hover:text-[var(--d-fg)]")
-                        }
-                      >
-                        {m.cat}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* menu items for the active category */}
-                <ul className="mt-3 space-y-2">
-                  {activeItems.map((m) => {
-                    const qty = basket[m.name] ?? 0;
-                    return (
-                      <li
-                        key={m.name}
-                        className={
-                          "flex items-center gap-2.5 rounded-xl border bg-[var(--d-surface)] p-2 transition-colors " +
-                          (qty > 0
-                            ? "border-[var(--d-accent)]/60"
-                            : "border-[var(--d-border)]")
-                        }
-                      >
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--d-accent)]/12 text-[var(--d-accent)]">
-                          <Salad className="h-4 w-4" />
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <div className="truncate text-[11.5px] font-semibold text-[var(--d-fg)]">
-                            {m.name}
-                          </div>
-                          <div className="truncate text-[10px] text-[var(--d-faint)]">
-                            {m.desc}
-                          </div>
-                        </div>
-                        <span className="text-[11.5px] font-bold text-[var(--d-accent)]">
-                          ₺{m.price}
-                        </span>
-                        <div className="flex items-center gap-1">
-                          {qty > 0 && (
-                            <>
-                              <IconButton
-                                icon={Minus}
-                                label="Azalt"
-                                onClick={() => removeFromBasket(m.name)}
-                              />
-                              <motion.span
-                                key={qty}
-                                initial={{ scale: 0.5 }}
-                                animate={{ scale: 1 }}
-                                transition={{ duration: 0.2 }}
-                                className="w-4 text-center text-[12px] font-bold tabular-nums text-[var(--d-fg)]"
-                              >
-                                {qty}
-                              </motion.span>
-                            </>
-                          )}
-                          <IconButton
-                            icon={Plus}
-                            label="Ekle"
-                            tone="success"
-                            onClick={() => addToBasket(m.name)}
-                          />
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-
-                {/* live basket */}
-                <AnimatePresence initial={false}>
-                  {basketCount > 0 && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-                      className="overflow-hidden"
-                    >
-                      <div className="mt-3 flex items-center justify-between rounded-xl bg-[var(--d-surface-2)] px-3 py-2 text-[11px]">
-                        <span className="inline-flex items-center gap-1.5 text-[var(--d-muted)]">
-                          <CreditCard className="h-3.5 w-3.5 text-[var(--d-accent)]" /> Sepet ·{" "}
-                          <span className="font-semibold text-[var(--d-fg)]">
-                            <DemoCounter value={basketCount} /> ürün
-                          </span>
-                        </span>
-                        <span className="font-bold text-[var(--d-accent)]">
-                          ₺<DemoCounter value={basketTotal} format={(n) => fmtTRY(n)} />
-                        </span>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                <button
-                  type="button"
-                  onClick={placeOrder}
-                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-[var(--d-accent)] py-2 text-[11px] font-bold text-[var(--d-accent-fg)] transition-all hover:brightness-105 active:scale-[0.98] disabled:opacity-50"
-                  disabled={basketCount === 0}
-                >
-                  <Send className="h-3.5 w-3.5" /> Sipariş Ver
-                  {basketCount > 0 && (
-                    <>
-                      {" · ₺"}
-                      <DemoCounter value={basketTotal} format={(n) => fmtTRY(n)} />
-                    </>
-                  )}
-                </button>
-              </div>
-            </PhoneFrame>
-          </div>
-
-          {/* orders + popular + sales */}
-          <div className="grid gap-3 lg:grid-cols-[1.2fr_1fr]">
-            <Panel title="Online Siparişler" action="Mutfak · Canlı">
-              <ul className="space-y-2">
-                <AnimatePresence initial={false}>
-                  {orders.map((o) => {
-                    const done = o.status === "Servis edildi";
-                    return (
-                      <motion.li
-                        key={o.code}
-                        layout
-                        initial={{ opacity: 0, y: -8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                        className="flex items-center gap-3 rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] px-3 py-2.5"
-                      >
-                        <span className="w-12 shrink-0 text-[12px] font-semibold tabular-nums text-[var(--d-accent)]">
-                          {o.code}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <div className="truncate text-[12.5px] font-medium text-[var(--d-fg)]">
-                            {o.channel}
-                          </div>
-                          <div className="truncate text-[11px] text-[var(--d-faint)]">
-                            {o.items}
-                          </div>
-                        </div>
-                        <div className="flex flex-col items-end gap-1.5">
-                          <span className="text-[12px] font-bold text-[var(--d-fg)]">
-                            ₺{fmtTRY(o.total)}
-                          </span>
-                          {done ? (
-                            <Tag tone={orderTone[o.status]}>
-                              <Check className="h-2.5 w-2.5" /> {o.status}
-                            </Tag>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => advanceOrder(o.code)}
-                              className="inline-flex items-center gap-1 rounded-full bg-[var(--d-accent)]/15 px-2 py-0.5 text-[10px] font-semibold text-[var(--d-accent)] transition-colors hover:bg-[var(--d-accent)]/25"
-                            >
-                              <ChefHat className="h-2.5 w-2.5" /> {o.status} → {orderNext[o.status]}
-                            </button>
-                          )}
-                        </div>
-                      </motion.li>
-                    );
-                  })}
-                </AnimatePresence>
-              </ul>
-            </Panel>
-
-            <div className="space-y-3">
-              <Panel title="Günlük Satış">
-                <div className="flex items-end justify-between">
-                  <div>
-                    <div className="text-2xl font-bold text-[var(--d-fg)]">
-                      ₺<DemoCounter value={ciro} format={(n) => fmtTRY(n)} />
-                    </div>
-                    <div className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--d-pos)]">
-                      <TrendingUp className="h-3 w-3" /> dün bu saate göre +22%
-                    </div>
-                  </div>
-                  <Clock className="h-5 w-5 text-[var(--d-accent)]" />
-                </div>
-                <Sparkline data={[12, 18, 15, 26, 22, 34, 30, 44, 49]} className="mt-3 h-10" />
-                <div className="mt-2 flex items-center justify-between text-[10px] text-[var(--d-faint)]">
-                  <span>10:00</span><span>14:00</span><span>18:00</span><span>22:00</span>
-                </div>
-              </Panel>
-
-              <Panel title="Popüler Ürünler" action="Bugün · Canlı">
-                <ul className="space-y-2.5">
-                  {popular.slice(0, 4).map((p) => (
-                    <li key={p.name}>
-                      <div className="flex items-center justify-between text-[12px]">
-                        <span className="text-[var(--d-muted)]">{p.name}</span>
-                        <span className="font-semibold text-[var(--d-fg)]">
-                          <DemoCounter value={p.count} /> · ₺{p.price}
-                        </span>
-                      </div>
-                      <Bar value={(p.count / maxPopular) * 100} className="mt-1" />
-                    </li>
-                  ))}
-                </ul>
-              </Panel>
             </div>
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--d-accent)]/15 text-[var(--d-accent)]">
+              <Coffee className="h-3.5 w-3.5" />
+            </span>
           </div>
 
-          {/* today's reservations — toggle status */}
-          <Panel title="Bugünkü Rezervasyonlar" action="Dokun · onay durumu">
-            <ul className="grid gap-2 sm:grid-cols-2">
-              {reservations.map((r) => (
-                <li
-                  key={r.res.id}
-                  className="flex items-center gap-3 rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] px-3 py-2.5"
+          {/* category chips — tap to switch (live demo) */}
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {MENU.map((m) => {
+              const active = m.cat === activeCat;
+              return (
+                <button
+                  key={m.cat}
+                  type="button"
+                  onClick={() => setActiveCat(m.cat)}
+                  className={
+                    "cursor-pointer rounded-full px-2.5 py-1 text-[10px] font-semibold transition-colors " +
+                    (active
+                      ? "bg-[var(--d-accent)] text-[var(--d-accent-fg)]"
+                      : "border border-[var(--d-border)] text-[var(--d-muted)] hover:text-[var(--d-fg)]")
+                  }
                 >
-                  <span className="w-11 shrink-0 text-[12px] font-semibold tabular-nums text-[var(--d-accent)]">
-                    {r.res.time}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-[12.5px] font-medium text-[var(--d-fg)]">
-                      {r.res.name}
-                    </div>
-                    <div className="truncate text-[11px] text-[var(--d-faint)]">
-                      {r.res.people}
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => toggleReservation(r.res.id)}
-                    aria-label="Durumu değiştir"
-                    className="transition-transform active:scale-95"
+                  {m.cat}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* menu items for the active category */}
+          <ul className="mt-3 space-y-2">
+            {activeItems
+              .filter((m) => itemActive[m.name])
+              .map((m) => {
+                const qty = basket[m.name] ?? 0;
+                return (
+                  <li
+                    key={m.name}
+                    className={
+                      "flex items-center gap-2.5 rounded-xl border bg-[var(--d-surface)] p-2 transition-colors " +
+                      (qty > 0 ? "border-[var(--d-accent)]/60" : "border-[var(--d-border)]")
+                    }
                   >
-                    <motion.span
-                      key={r.status}
-                      initial={{ scale: 0.6, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-                    >
-                      <Tag tone={resTone[r.status]}>
-                        {r.status === "Onaylı" ? (
-                          <Check className="h-2.5 w-2.5" />
-                        ) : (
-                          <Clock className="h-2.5 w-2.5" />
-                        )}
-                        {r.status}
-                      </Tag>
-                    </motion.span>
-                  </button>
-                </li>
-              ))}
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--d-accent)]/12 text-[var(--d-accent)]">
+                      <Salad className="h-4 w-4" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-[11.5px] font-semibold text-[var(--d-fg)]">{m.name}</div>
+                      <div className="truncate text-[10px] text-[var(--d-faint)]">{m.desc}</div>
+                    </div>
+                    <span className="text-[11.5px] font-bold text-[var(--d-accent)]">₺{m.price}</span>
+                    <div className="flex items-center gap-1">
+                      {qty > 0 && (
+                        <>
+                          <IconButton icon={Minus} label="Azalt" onClick={() => removeFromBasket(m.name)} />
+                          <motion.span
+                            key={qty}
+                            initial={{ scale: 0.5 }}
+                            animate={{ scale: 1 }}
+                            transition={{ duration: 0.2 }}
+                            className="w-4 text-center text-[12px] font-bold tabular-nums text-[var(--d-fg)]"
+                          >
+                            {qty}
+                          </motion.span>
+                        </>
+                      )}
+                      <IconButton icon={Plus} label="Ekle" tone="success" onClick={() => addToBasket(m.name)} />
+                    </div>
+                  </li>
+                );
+              })}
+          </ul>
+
+          {/* live basket */}
+          <AnimatePresence initial={false}>
+            {basketCount > 0 && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                className="overflow-hidden"
+              >
+                <div className="mt-3 flex items-center justify-between rounded-xl bg-[var(--d-surface-2)] px-3 py-2 text-[11px]">
+                  <span className="inline-flex items-center gap-1.5 text-[var(--d-muted)]">
+                    <CreditCard className="h-3.5 w-3.5 text-[var(--d-accent)]" /> Sepet ·{" "}
+                    <span className="font-semibold text-[var(--d-fg)]">
+                      <DemoCounter value={basketCount} /> ürün
+                    </span>
+                  </span>
+                  <span className="font-bold text-[var(--d-accent)]">
+                    ₺<DemoCounter value={basketTotal} format={(n) => fmtTRY(n)} />
+                  </span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <button
+            type="button"
+            onClick={placeOrder}
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-[var(--d-accent)] py-2 text-[11px] font-bold text-[var(--d-accent-fg)] transition-all hover:brightness-105 active:scale-[0.98] disabled:opacity-50"
+            disabled={basketCount === 0}
+          >
+            <Send className="h-3.5 w-3.5" /> Sipariş Ver
+            {basketCount > 0 && (
+              <>
+                {" · ₺"}
+                <DemoCounter value={basketTotal} format={(n) => fmtTRY(n)} />
+              </>
+            )}
+          </button>
+        </div>
+      </PhoneFrame>
+    );
+  }
+
+  /* ---------- the table grid (reused in genel + masalar) ---------- */
+  function tableGrid() {
+    return (
+      <Panel title="Masa Durumu" action="Dokun · durumu değiştir">
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+          {tables.map((t) => (
+            <button
+              key={t.no}
+              type="button"
+              onClick={() => cycleTable(t.no)}
+              className="rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] p-2.5 text-left transition-all hover:border-[var(--d-accent)]/50 active:scale-[0.97]"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[12px] font-bold text-[var(--d-fg)]">{t.no}</span>
+                <motion.span
+                  key={t.state}
+                  initial={{ scale: 0.6, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  <Tag tone={tableTone[t.state]}>{t.state}</Tag>
+                </motion.span>
+              </div>
+              <div className="mt-1.5 truncate text-[10px] text-[var(--d-faint)]">{t.info}</div>
+            </button>
+          ))}
+        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-3 text-[10px] text-[var(--d-muted)]">
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-[var(--d-pos)]" /> Boş ·{" "}
+            <span className="font-semibold text-[var(--d-fg)]">
+              <DemoCounter value={counts["Boş"]} />
+            </span>
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-[var(--d-neg)]" /> Dolu ·{" "}
+            <span className="font-semibold text-[var(--d-fg)]">
+              <DemoCounter value={counts["Dolu"]} />
+            </span>
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-[var(--d-warn)]" /> Rezerve ·{" "}
+            <span className="font-semibold text-[var(--d-fg)]">
+              <DemoCounter value={counts["Rezerve"]} />
+            </span>
+          </span>
+        </div>
+      </Panel>
+    );
+  }
+
+  /* ---------- VIEWS ---------- */
+  function genelView() {
+    return (
+      <div className="space-y-3">
+        {/* stats */}
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <StatTile
+            label="Bugünkü Ciro"
+            value={<DemoCounter value={ciro} format={(n) => `₺${fmtTRY(n)}`} />}
+            delta="+22%"
+            icon={Wallet}
+          />
+          <StatTile
+            label="Aktif Masa"
+            value={
+              <span>
+                <DemoCounter value={aktifMasa} />
+                <span className="text-[var(--d-faint)]">/{tables.length}</span>
+              </span>
+            }
+            delta="+3"
+            icon={UtensilsCrossed}
+          />
+          <StatTile
+            label="Online Sipariş"
+            value={<DemoCounter value={onlineCount} />}
+            delta="+11"
+            icon={CreditCard}
+          />
+          <StatTile
+            label="Rezervasyon"
+            value={<DemoCounter value={rezCount} />}
+            delta="+2"
+            icon={CalendarCheck}
+          />
+        </div>
+
+        {/* table grid + qr menu phone */}
+        <div className="grid gap-3 lg:grid-cols-[1.35fr_1fr]">
+          {tableGrid()}
+          {qrMenuPhone()}
+        </div>
+
+        {/* orders + popular + sales */}
+        <div className="grid gap-3 lg:grid-cols-[1.2fr_1fr]">
+          <Panel title="Online Siparişler" action="Mutfak · Canlı">
+            <ul className="space-y-2">
+              <AnimatePresence initial={false}>{orders.map((o) => orderRow(o))}</AnimatePresence>
             </ul>
           </Panel>
 
-          {/* google review + campaign */}
-          <div className="grid gap-3 lg:grid-cols-2">
-            <Panel title="Google Yorum" action="Otomatik">
-              <div className="flex items-center gap-3">
-                <div className="flex flex-col items-center justify-center rounded-xl bg-[var(--d-accent)]/12 px-4 py-2.5">
-                  <span className="text-2xl font-bold text-[var(--d-accent)]">4.8</span>
-                  <span className="flex gap-0.5">
-                    {[0, 1, 2, 3, 4].map((s) => (
-                      <Star
-                        key={s}
-                        className="h-3 w-3 fill-[var(--d-accent)] text-[var(--d-accent)]"
-                      />
-                    ))}
-                  </span>
+          <div className="space-y-3">
+            <Panel title="Günlük Satış">
+              <div className="flex items-end justify-between">
+                <div>
+                  <div className="text-2xl font-bold text-[var(--d-fg)]">
+                    ₺<DemoCounter value={ciro} format={(n) => fmtTRY(n)} />
+                  </div>
+                  <div className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--d-pos)]">
+                    <TrendingUp className="h-3 w-3" /> dün bu saate göre +22%
+                  </div>
                 </div>
-                <div className="min-w-0 flex-1 text-[12px] leading-relaxed text-[var(--d-muted)]">
-                  <span className="font-semibold text-[var(--d-fg)]">312</span> Google
-                  değerlendirmesi · bu ay{" "}
-                  <span className="font-semibold text-[var(--d-pos)]">+24 yeni yorum</span>.
-                  Memnun müşterilere otomatik yorum linki gönderilir.
-                </div>
+                <Clock className="h-5 w-5 text-[var(--d-accent)]" />
               </div>
-              <div className="mt-3 flex items-center justify-between rounded-xl bg-[#25D366]/10 px-3 py-2.5">
-                <span className="inline-flex items-center gap-2 text-[11.5px] text-[var(--d-muted)]">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#25D366] text-[#06210f]">
-                    <MessageCircle className="h-3.5 w-3.5" />
-                  </span>
-                  Ayşe Hanım'a teşekkür mesajı + yorum linki
-                </span>
-                <button
-                  type="button"
-                  onClick={() =>
-                    toast({
-                      title: "Yorum linki gönderildi",
-                      desc: "Ayşe Hanım'a WhatsApp ile Google yorum linki iletildi",
-                      tone: "success",
-                      icon: MessageCircle,
-                    })
-                  }
-                  className="rounded-full bg-[var(--d-accent)] px-2.5 py-1 text-[10px] font-bold text-[var(--d-accent-fg)] transition-transform hover:scale-[1.04] active:scale-95"
-                >
-                  Yorum İste
-                </button>
+              <Sparkline data={[12, 18, 15, 26, 22, 34, 30, 44, 49]} className="mt-3 h-10" />
+              <div className="mt-2 flex items-center justify-between text-[10px] text-[var(--d-faint)]">
+                <span>10:00</span>
+                <span>14:00</span>
+                <span>18:00</span>
+                <span>22:00</span>
               </div>
             </Panel>
 
-            <Panel title="Aktif Kampanya" action="Bu Hafta">
-              <div className="flex items-start gap-3">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--d-accent)]/15 text-[var(--d-accent)]">
-                  <Megaphone className="h-4 w-4" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="text-[13px] font-semibold text-[var(--d-fg)]">
-                    Hafta İçi Öğle Menüsü · %20 İndirim
-                  </div>
-                  <p className="mt-1 text-[11.5px] leading-relaxed text-[var(--d-muted)]">
-                    12:00 – 15:00 arası QR menüden verilen ana yemeklerde geçerli.
-                  </p>
-                </div>
-              </div>
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                <div className="rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] px-3 py-2">
-                  <div className="text-[10px] text-[var(--d-faint)]">Kullanım</div>
-                  <div className="text-[15px] font-bold text-[var(--d-fg)]">148 kez</div>
-                </div>
-                <div className="rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] px-3 py-2">
-                  <div className="text-[10px] text-[var(--d-faint)]">Ek Ciro</div>
-                  <div className="text-[15px] font-bold text-[var(--d-accent)]">₺19.400</div>
-                </div>
-              </div>
+            <Panel title="Popüler Ürünler" action="Bugün · Canlı">
+              <ul className="space-y-2.5">
+                {popular.slice(0, 4).map((p) => (
+                  <li key={p.name}>
+                    <div className="flex items-center justify-between text-[12px]">
+                      <span className="text-[var(--d-muted)]">{p.name}</span>
+                      <span className="font-semibold text-[var(--d-fg)]">
+                        <DemoCounter value={p.count} /> · ₺{p.price}
+                      </span>
+                    </div>
+                    <Bar value={(p.count / maxPopular) * 100} className="mt-1" />
+                  </li>
+                ))}
+              </ul>
             </Panel>
           </div>
         </div>
+
+        {/* today's reservations — toggle status */}
+        <Panel title="Bugünkü Rezervasyonlar" action="Dokun · onay durumu">
+          <ul className="grid gap-2 sm:grid-cols-2">{reservations.map((r) => reservationRow(r))}</ul>
+        </Panel>
+
+        {/* google review + campaign */}
+        <div className="grid gap-3 lg:grid-cols-2">
+          <Panel title="Google Yorum" action="Otomatik">
+            <div className="flex items-center gap-3">
+              <div className="flex flex-col items-center justify-center rounded-xl bg-[var(--d-accent)]/12 px-4 py-2.5">
+                <span className="text-2xl font-bold text-[var(--d-accent)]">4.8</span>
+                <span className="flex gap-0.5">
+                  {[0, 1, 2, 3, 4].map((s) => (
+                    <Star key={s} className="h-3 w-3 fill-[var(--d-accent)] text-[var(--d-accent)]" />
+                  ))}
+                </span>
+              </div>
+              <div className="min-w-0 flex-1 text-[12px] leading-relaxed text-[var(--d-muted)]">
+                <span className="font-semibold text-[var(--d-fg)]">312</span> Google değerlendirmesi · bu ay{" "}
+                <span className="font-semibold text-[var(--d-pos)]">+24 yeni yorum</span>. Memnun müşterilere otomatik
+                yorum linki gönderilir.
+              </div>
+            </div>
+            <div className="mt-3 flex items-center justify-between rounded-xl bg-[#25D366]/10 px-3 py-2.5">
+              <span className="inline-flex items-center gap-2 text-[11.5px] text-[var(--d-muted)]">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#25D366] text-[#06210f]">
+                  <MessageCircle className="h-3.5 w-3.5" />
+                </span>
+                Ayşe Hanım&apos;a teşekkür mesajı + yorum linki
+              </span>
+              <button
+                type="button"
+                onClick={() =>
+                  toast({
+                    title: "Yorum linki gönderildi",
+                    desc: "Ayşe Hanım'a WhatsApp ile Google yorum linki iletildi",
+                    tone: "success",
+                    icon: MessageCircle,
+                  })
+                }
+                className="rounded-full bg-[var(--d-accent)] px-2.5 py-1 text-[10px] font-bold text-[var(--d-accent-fg)] transition-transform hover:scale-[1.04] active:scale-95"
+              >
+                Yorum İste
+              </button>
+            </div>
+          </Panel>
+
+          <Panel title="Aktif Kampanya" action="Bu Hafta">
+            <div className="flex items-start gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--d-accent)]/15 text-[var(--d-accent)]">
+                <Megaphone className="h-4 w-4" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="text-[13px] font-semibold text-[var(--d-fg)]">Hafta İçi Öğle Menüsü · %20 İndirim</div>
+                <p className="mt-1 text-[11.5px] leading-relaxed text-[var(--d-muted)]">
+                  12:00 – 15:00 arası QR menüden verilen ana yemeklerde geçerli.
+                </p>
+              </div>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <div className="rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] px-3 py-2">
+                <div className="text-[10px] text-[var(--d-faint)]">Kullanım</div>
+                <div className="text-[15px] font-bold text-[var(--d-fg)]">148 kez</div>
+              </div>
+              <div className="rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] px-3 py-2">
+                <div className="text-[10px] text-[var(--d-faint)]">Ek Ciro</div>
+                <div className="text-[15px] font-bold text-[var(--d-accent)]">₺19.400</div>
+              </div>
+            </div>
+          </Panel>
+        </div>
       </div>
+    );
+  }
+
+  function menuView() {
+    return (
+      <div className="grid gap-3 lg:grid-cols-[1.25fr_1fr]">
+        <Panel
+          title="Menü Yönetimi"
+          action={`${MENU.flatMap((m) => m.items).filter((i) => itemActive[i.name]).length} aktif ürün`}
+        >
+          <div className="mb-3 flex flex-wrap gap-1.5">
+            {MENU.map((m) => {
+              const active = m.cat === activeCat;
+              return (
+                <button
+                  key={m.cat}
+                  type="button"
+                  onClick={() => setActiveCat(m.cat)}
+                  className={
+                    "rounded-full px-3 py-1 text-[11.5px] font-semibold transition-colors " +
+                    (active
+                      ? "bg-[var(--d-accent)] text-[var(--d-accent-fg)]"
+                      : "border border-[var(--d-border)] text-[var(--d-muted)] hover:text-[var(--d-fg)]")
+                  }
+                >
+                  {m.cat}
+                </button>
+              );
+            })}
+          </div>
+          <ul className="space-y-2">
+            {activeItems.map((m) => (
+              <li
+                key={m.name}
+                className="flex items-center gap-3 rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] px-3 py-2.5"
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--d-accent)]/12 text-[var(--d-accent)]">
+                  <Salad className="h-4 w-4" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-[12.5px] font-medium text-[var(--d-fg)]">{m.name}</div>
+                  <div className="truncate text-[11px] text-[var(--d-faint)]">{m.desc}</div>
+                </div>
+                <span className="shrink-0 text-[12.5px] font-bold text-[var(--d-accent)]">₺{m.price}</span>
+                <span className="hidden w-12 shrink-0 text-right text-[11px] font-medium text-[var(--d-muted)] sm:block">
+                  {itemActive[m.name] ? "Aktif" : "Pasif"}
+                </span>
+                <Toggle
+                  checked={itemActive[m.name]}
+                  onChange={(v) => {
+                    setItemActive((s) => ({ ...s, [m.name]: v }));
+                    toast({
+                      title: v ? "Ürün menüye eklendi" : "Ürün menüden gizlendi",
+                      desc: m.name,
+                      tone: v ? "success" : "warn",
+                      icon: Salad,
+                    });
+                  }}
+                />
+              </li>
+            ))}
+          </ul>
+        </Panel>
+        <div className="space-y-3">
+          <Panel title="QR Menü Önizleme" action="Masa M5">
+            {qrMenuPhone()}
+          </Panel>
+        </div>
+      </div>
+    );
+  }
+
+  function siparislerView() {
+    const chips = [
+      { k: "Toplam", v: orders.length },
+      { k: "Yeni", v: orders.filter((o) => o.status === "Yeni").length },
+      { k: "Hazırlanıyor", v: orders.filter((o) => o.status === "Hazırlanıyor").length },
+      { k: "Servis", v: orders.filter((o) => o.status === "Servis edildi").length },
+    ];
+    return (
+      <Panel title="Online Siparişler" action="Getir · Yemeksepeti · QR Masa">
+        <div className="mb-3 grid grid-cols-4 gap-2">
+          {chips.map((c) => (
+            <div
+              key={c.k}
+              className="rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] px-3 py-2 text-center"
+            >
+              <div className="text-lg font-bold text-[var(--d-fg)]">{c.v}</div>
+              <div className="text-[10px] text-[var(--d-faint)]">{c.k}</div>
+            </div>
+          ))}
+        </div>
+        <ul className="space-y-2">
+          <AnimatePresence initial={false}>{orders.map((o) => orderRow(o))}</AnimatePresence>
+        </ul>
+      </Panel>
+    );
+  }
+
+  function masalarView() {
+    return (
+      <div className="space-y-3">
+        <div className="grid grid-cols-3 gap-3">
+          <StatTile label="Boş" value={<DemoCounter value={counts["Boş"]} />} icon={UtensilsCrossed} />
+          <StatTile label="Dolu" value={<DemoCounter value={counts["Dolu"]} />} icon={UtensilsCrossed} />
+          <StatTile label="Rezerve" value={<DemoCounter value={counts["Rezerve"]} />} icon={CalendarCheck} />
+        </div>
+        {tableGrid()}
+      </div>
+    );
+  }
+
+  function rezervasyonlarView() {
+    const onayli = reservations.filter((r) => r.status === "Onaylı").length;
+    return (
+      <Panel title="Bugünkü Rezervasyonlar" action={`${onayli}/${reservations.length} onaylı`}>
+        <div className="mb-3 flex items-start gap-3 rounded-xl bg-[var(--d-accent)]/10 p-3">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--d-accent)]/20 text-[var(--d-accent)]">
+            <CalendarCheck className="h-4 w-4" />
+          </span>
+          <div className="text-[12px] leading-relaxed text-[var(--d-muted)]">
+            Bugün <span className="font-semibold text-[var(--d-fg)]">{reservations.length}</span> rezervasyon var. Onay
+            durumunu değiştirmek için sağdaki etikete dokunun; müşteriye otomatik WhatsApp bilgilendirmesi gider.
+          </div>
+        </div>
+        <ul className="grid gap-2 sm:grid-cols-2">{reservations.map((r) => reservationRow(r))}</ul>
+      </Panel>
+    );
+  }
+
+  function mutfakView() {
+    const queue = orders.filter((o) => o.status !== "Servis edildi");
+    return (
+      <div className="space-y-3">
+        <div className="grid grid-cols-3 gap-3">
+          <StatTile
+            label="Yeni"
+            value={<DemoCounter value={orders.filter((o) => o.status === "Yeni").length} />}
+            icon={CreditCard}
+          />
+          <StatTile
+            label="Hazırlanıyor"
+            value={<DemoCounter value={orders.filter((o) => o.status === "Hazırlanıyor").length} />}
+            icon={ChefHat}
+          />
+          <StatTile
+            label="Hazır"
+            value={<DemoCounter value={orders.filter((o) => o.status === "Hazır").length} />}
+            icon={Check}
+          />
+        </div>
+        <Panel title="Mutfak Ekranı (KDS)" action="Aktif siparişler">
+          {queue.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-[var(--d-border)] px-3 py-8 text-center text-[12px] text-[var(--d-faint)]">
+              Bekleyen sipariş yok. Tüm siparişler servis edildi.
+            </div>
+          ) : (
+            <ul className="grid gap-2 sm:grid-cols-2">
+              {queue.map((o) => (
+                <li
+                  key={o.code}
+                  className="rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] p-3"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-[13px] font-bold text-[var(--d-accent)]">{o.code}</span>
+                    <Tag tone={orderTone[o.status]}>{o.status}</Tag>
+                  </div>
+                  <div className="mt-1 text-[11px] text-[var(--d-faint)]">{o.channel}</div>
+                  <div className="mt-1 text-[12px] font-medium text-[var(--d-fg)]">{o.items}</div>
+                  <div className="mt-3 flex items-center gap-2">
+                    <DemoActionButton variant="soft" onClick={() => advanceOrder(o.code)} className="flex-1">
+                      <ChefHat className="h-3.5 w-3.5" /> {orderNext[o.status]}
+                    </DemoActionButton>
+                    {o.status === "Hazır" ? (
+                      <DemoActionButton variant="solid" onClick={() => advanceOrder(o.code)}>
+                        <Check className="h-3.5 w-3.5" /> Servis
+                      </DemoActionButton>
+                    ) : (
+                      <DemoActionButton
+                        variant="solid"
+                        onClick={() => {
+                          setOrders((prev) =>
+                            prev.map((x) => (x.code === o.code ? { ...x, status: "Hazır" } : x)),
+                          );
+                          toast({ title: `${o.code} · Hazır`, desc: "Servise hazır", tone: "success", icon: Check });
+                        }}
+                      >
+                        <Check className="h-3.5 w-3.5" /> Hazır
+                      </DemoActionButton>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Panel>
+      </div>
+    );
+  }
+
+  function kampanyalarView() {
+    const aktif = campaigns.filter((c) => c.running).length;
+    return (
+      <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <StatTile label="Aktif Kampanya" value={<DemoCounter value={aktif} />} icon={Megaphone} />
+          <StatTile label="Toplam Kullanım" value="277 kez" icon={TrendingUp} />
+          <StatTile label="Ek Ciro" value="₺30.450" icon={Wallet} />
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {campaigns.map((c) => (
+            <Panel
+              key={c.id}
+              title={c.title}
+              action={
+                <span
+                  className={
+                    "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold " +
+                    (c.running
+                      ? "bg-[var(--d-pos)]/15 text-[var(--d-pos)]"
+                      : "bg-[var(--d-surface-2)] text-[var(--d-faint)]")
+                  }
+                >
+                  {c.running ? "Yayında" : "Durduruldu"}
+                </span>
+              }
+            >
+              <p className="text-[11.5px] leading-relaxed text-[var(--d-muted)]">{c.desc}</p>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <div className="rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] px-3 py-2">
+                  <div className="text-[10px] text-[var(--d-faint)]">Kullanım</div>
+                  <div className="text-[14px] font-bold text-[var(--d-fg)]">{c.uses}</div>
+                </div>
+                <div className="rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] px-3 py-2">
+                  <div className="text-[10px] text-[var(--d-faint)]">Ek Ciro</div>
+                  <div className="text-[14px] font-bold text-[var(--d-accent)]">{c.extra}</div>
+                </div>
+              </div>
+              <div className="mt-3 flex items-center justify-between rounded-xl border border-[var(--d-border)] px-3 py-2">
+                <span className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[var(--d-fg)]">
+                  {c.running ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+                  {c.running ? "Durdur" : "Başlat"}
+                </span>
+                <Toggle checked={c.running} onChange={() => toggleCampaign(c.id)} />
+              </div>
+            </Panel>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  function raporlarView() {
+    return (
+      <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <StatTile
+            label="Günlük Ciro"
+            value={<DemoCounter value={ciro} format={(n) => `₺${fmtTRY(n)}`} />}
+            delta="+22%"
+            icon={Wallet}
+          />
+          <StatTile label="Haftalık Ciro" value={`₺${fmtTRY(ciro + 268000)}`} delta="+14%" icon={TrendingUp} />
+          <StatTile label="Aylık Ciro" value={`₺${fmtTRY(ciro + 1142000)}`} delta="+9%" icon={Coffee} />
+          <StatTile label="Ort. Adisyon" value="₺486" delta="+6%" icon={CreditCard} />
+        </div>
+        <Panel
+          title="Son 7 Gün Ciro"
+          action={
+            <button
+              type="button"
+              onClick={() =>
+                toast({
+                  title: "Rapor hazırlandı",
+                  desc: "Haftalık ciro raporu indirildi",
+                  tone: "success",
+                  icon: Download,
+                })
+              }
+              className="inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--d-accent)]"
+            >
+              <Download className="h-3.5 w-3.5" /> Rapor İndir
+            </button>
+          }
+        >
+          <Sparkline data={[38, 44, 41, 52, 47, 61, Math.max(30, Math.round(ciro / 900))]} className="h-24" />
+          <div className="mt-2 flex items-center justify-between text-[10px] text-[var(--d-faint)]">
+            <span>Pzt</span>
+            <span>Sal</span>
+            <span>Çar</span>
+            <span>Per</span>
+            <span>Cum</span>
+            <span>Cmt</span>
+            <span>Bugün</span>
+          </div>
+        </Panel>
+        <Panel title="En Çok Satan Ürünler">
+          <ul className="space-y-2.5">
+            {popular.map((p) => (
+              <li key={p.name}>
+                <div className="flex items-center justify-between text-[12px]">
+                  <span className="text-[var(--d-muted)]">{p.name}</span>
+                  <span className="font-semibold text-[var(--d-fg)]">
+                    {p.count} adet · ₺{fmtTRY(p.count * p.price)}
+                  </span>
+                </div>
+                <Bar value={(p.count / maxPopular) * 100} className="mt-1" />
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      </div>
+    );
+  }
+
+  function ayarlarView() {
+    const rows: { k: keyof typeof settings; label: string; desc: string }[] = [
+      { k: "qrSiparis", label: "QR Masa Siparişi", desc: "Müşteriler masadaki QR'dan sipariş verebilir." },
+      { k: "onlineRezervasyon", label: "Online Rezervasyon", desc: "Web sitesinden boş masa seçilip rezervasyon yapılır." },
+      { k: "whatsapp", label: "WhatsApp Bilgilendirme", desc: "Rezervasyon onay ve hatırlatmaları otomatik gider." },
+      { k: "googleYorum", label: "Otomatik Google Yorum", desc: "Memnun müşteriye yorum linki gönderilir." },
+      { k: "stokUyari", label: "Azalan Stok Uyarısı", desc: "Stok azaldığında panelde uyarı gösterilir." },
+    ];
+    return (
+      <div className="space-y-3">
+        <Panel title="İşletme Ayarları">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <SelectField
+              label="Çalışma Saatleri"
+              value={workHours}
+              onChange={setWorkHours}
+              options={["09:00 – 23:00", "10:00 – 24:00", "11:00 – 02:00"]}
+            />
+            <SelectField label="Servis Ücreti" value={serviceFee} onChange={setServiceFee} options={["Yok", "%5", "%10"]} />
+            <SelectField
+              label="Para Birimi"
+              value={currency}
+              onChange={setCurrency}
+              options={["₺ Türk Lirası", "€ Euro", "$ Dolar"]}
+            />
+          </div>
+        </Panel>
+        <Panel title="Sistem & Bildirimler">
+          <ul className="space-y-1">
+            {rows.map((r) => (
+              <li key={r.k} className="flex items-center gap-3 rounded-xl px-1 py-2.5">
+                <div className="min-w-0 flex-1">
+                  <div className="text-[13px] font-medium text-[var(--d-fg)]">{r.label}</div>
+                  <div className="text-[11px] text-[var(--d-faint)]">{r.desc}</div>
+                </div>
+                <Toggle checked={settings[r.k]} onChange={(v) => setSettings((s) => ({ ...s, [r.k]: v }))} />
+              </li>
+            ))}
+          </ul>
+          <div className="mt-3 flex justify-end">
+            <DemoActionButton
+              variant="solid"
+              onClick={() => toast({ title: "Ayarlar kaydedildi", desc: "Tercihleriniz güncellendi", tone: "success", icon: Settings })}
+            >
+              Kaydet
+            </DemoActionButton>
+          </div>
+        </Panel>
+      </div>
+    );
+  }
+
+  function renderView() {
+    switch (view) {
+      case "menu":
+        return menuView();
+      case "siparisler":
+        return siparislerView();
+      case "masalar":
+        return masalarView();
+      case "rezervasyonlar":
+        return rezervasyonlarView();
+      case "mutfak":
+        return mutfakView();
+      case "kampanyalar":
+        return kampanyalarView();
+      case "raporlar":
+        return raporlarView();
+      case "ayarlar":
+        return ayarlarView();
+      default:
+        return genelView();
+    }
+  }
+
+  return (
+    <BrowserFrame url="restaurantos.app/pano">
+      <div className="lg:grid lg:grid-cols-[180px_1fr] lg:gap-3">
+        <DemoSidebar
+          brand={{ icon: UtensilsCrossed, name: "RestaurantOS" }}
+          items={SIDEBAR}
+          active={view}
+          onSelect={setView}
+          onPresent={() => setPresentOpen(true)}
+        />
+        <div>
+          <DemoMobileNav
+            items={SIDEBAR}
+            active={view}
+            onSelect={setView}
+            onPresent={() => setPresentOpen(true)}
+          />
+          <AnimatedView id={view}>{renderView()}</AnimatedView>
+        </div>
+      </div>
+
+      <PresentationMode
+        open={presentOpen}
+        steps={STEPS}
+        onClose={() => setPresentOpen(false)}
+        onStepView={setView}
+      />
     </BrowserFrame>
   );
 }
@@ -938,7 +1388,7 @@ export function RestaurantSite() {
         id="panel"
         eyebrow="Canlı Panel"
         title="İşletmenizi yöneten dijital pano"
-        subtitle="Aşağıdaki panel, dolu bir akşam servisini yansıtacak şekilde tasarlandı: masa durumu, QR menü, online siparişler, günlük ciro ve yorumlar tek ekranda."
+        subtitle="Soldaki menüden her bölüme geçebilir, 'Sunum Modu' ile sistemi adım adım tanıtabilirsiniz. Panel gerçekten çalışır: QR menüden sipariş verin, masa durumu değiştirin, siparişi mutfakta ilerletin — ciro anında güncellenir."
         serif
       >
         <DemoStage>
@@ -1011,7 +1461,7 @@ export function RestaurantSite() {
         <PricingCards plans={PLANS} />
       </Section>
 
-      <FinalCTA serif />
+      <DemoClosingCTA defaultSector="Restoran & Kafe" serif />
     </DemoShell>
   );
 }

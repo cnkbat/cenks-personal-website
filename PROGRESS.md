@@ -144,6 +144,30 @@ sees "this is how my business would actually work". Local React state only — n
 - [x] Micro-interactions throughout: hover states, animated counters, toast notifications, modal
       animations, confirm dialogs, search/filter, empty states. Build: 21 routes static, 0 TS errors.
 
+### Demo app shell — working sidebars, Sunum Modu & sales CTA (2026-06-29)
+Pushes the "real application" feeling for self-exploration + a client-facing presenter.
+Approved visuals untouched; all additive. Local React state only.
+- [x] Kit (`components/demos/kit/app-shell.tsx`): `DemoSidebar` + `DemoMobileNav` (every item
+      switches the content area, active highlight, "Sunum Modu" trigger), `AnimatedView` (smooth
+      view transitions), `PresentationMode` (guided overlay: step no., title, TR explanation,
+      highlighted action, Geri/İleri/Sunumu Bitir, progress bar, Esc/←/→ keyboard, auto-switches
+      the relevant sidebar view), `DemoClosingCTA` + `ContactModal` (premium closing section →
+      demo-request form with success animation). Added `Toggle` to the kit.
+- [x] **Every sidebar item now works** — each opens its own screen with sector widgets/tables/
+      cards/actions + realistic Turkish data (no dead items):
+      - Kuaför OS: Genel Bakış · Randevular · Müşteriler · Hizmetler · Personeller · Gelir · Ayarlar
+      - Beauty: + Seanslar · Paketler · Raporlar
+      - ClinicOS: Genel Bakış · Takvim · Hastalar · Doktorlar · Ödemeler · Tedaviler · Raporlar · Ayarlar
+      - EstateOS: + Portföy · Müşteri Adayları · Satış Süreci · Danışmanlar · Komisyonlar · Raporlar
+      - RestaurantOS: + Menü · Siparişler · Masalar · Rezervasyonlar · Mutfak · Kampanyalar · Raporlar
+- [x] **Sunum Modu** per demo — sector-specific 7-step guided flow (~2-3 dk) for sitting with a
+      client; each step auto-switches to the relevant page; premium overlay, not a dev tutorial.
+- [x] **Premium closing CTA** on every demo: "Bu sistemi işletmeniz için özelleştirebiliriz." +
+      4 benefits + [Ücretsiz Demo Talep Et] (opens contact modal: Ad Soyad / İşletme Adı / Telefon /
+      Sektör / Mesaj → success animation) + [WhatsApp ile İletişime Geç].
+- [x] Note: view render helpers are invoked as functions (not `<X/>` JSX) so text-input focus is
+      preserved across re-renders. Build green.
+
 ---
 
 ## Preserved (separate product — do not remove)

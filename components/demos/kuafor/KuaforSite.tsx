@@ -8,6 +8,7 @@ import {
   Clock,
   Coins,
   Crown,
+  Download,
   Images,
   LayoutDashboard,
   MessageCircle,
@@ -16,29 +17,36 @@ import {
   Repeat,
   RotateCcw,
   Scissors,
+  Settings,
   Star,
   TrendingUp,
+  UserCog,
   UserPlus,
   Users,
   Wallet,
   X,
 } from "lucide-react";
 import {
+  AnimatedView,
   Avatar,
   Bar,
   BrowserFrame,
   ConfirmDialog,
   DemoActionButton,
+  DemoClosingCTA,
   DemoCounter,
   DemoHero,
+  DemoMobileNav,
   DemoModal,
   DemoShell,
+  DemoSidebar,
   DemoStage,
   FeatureGrid,
   FilterChips,
-  FinalCTA,
   IconButton,
+  MiniBars,
   Panel,
+  PresentationMode,
   PricingCards,
   ProblemSection,
   Scenario,
@@ -50,15 +58,17 @@ import {
   StatTile,
   Tag,
   TextField,
+  Toggle,
   demoThemes,
   useDemoToast,
+  type PresentationStep,
+  type SidebarItem,
 } from "@/components/demos/kit";
 
 const fmtTRY = (n: number) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 
 /* --------------------------- demo data --------------------------- */
 type Status = "onayli" | "bekliyor" | "tamamlandi" | "iptal" | "yeni";
-
 type Appt = {
   id: number;
   time: string;
@@ -71,6 +81,7 @@ type Appt = {
 };
 
 const STAFF = ["Ahmet Usta", "Emre", "Selim"];
+const STAFF_ROLE: Record<string, string> = { "Ahmet Usta": "Kuaför", Emre: "Berber", Selim: "Berber" };
 const SLOTS = ["09:30", "10:15", "11:00", "11:45", "12:30", "13:30", "14:15", "15:00", "15:45", "16:30", "17:15", "18:00"];
 const SERVICE_PRICES: Record<string, number> = {
   "Saç Kesimi": 250,
@@ -109,47 +120,88 @@ const STATUS_FILTERS = [
   { id: "tamamlandi", label: "Tamamlandı" },
 ];
 
-/* --------------------------- the interactive panel --------------------------- */
+const SIDEBAR: SidebarItem[] = [
+  { id: "genel", icon: LayoutDashboard, label: "Genel Bakış" },
+  { id: "randevular", icon: CalendarDays, label: "Randevular" },
+  { id: "musteriler", icon: Users, label: "Müşteriler" },
+  { id: "hizmetler", icon: Scissors, label: "Hizmetler" },
+  { id: "personeller", icon: UserCog, label: "Personeller" },
+  { id: "gelir", icon: Wallet, label: "Gelir" },
+  { id: "ayarlar", icon: Settings, label: "Ayarlar" },
+];
+
+const STEPS: PresentationStep[] = [
+  { view: "genel", title: "Genel Bakış", text: "İşletmenizin günlük randevu, gelir ve doluluk durumunu tek ekrandan görürsünüz.", action: "Üstteki canlı kartları (randevu, doluluk, gelir) müşteriye gösterin." },
+  { view: "randevular", title: "Randevu Akışı", text: "Telefon trafiğini azaltıp randevuları düzenli şekilde takip edebilirsiniz.", action: "Bir randevuyu 'Tamamla' ile kapatın; gelir anında artsın." },
+  { view: "musteriler", title: "Müşteri Kartları", text: "Her müşterinin geçmiş işlemleri, tercihleri ve notları kaybolmadan saklanır.", action: "Bir müşteri kartını açıp geçmişini gösterin." },
+  { view: "personeller", title: "Personel Takibi", text: "Hangi personelin ne kadar yoğun olduğunu ve hangi hizmetleri verdiğini takip edebilirsiniz.", action: "Personellerin günlük doluluğunu gösterin." },
+  { view: "gelir", title: "Gelir Takibi", text: "Günlük ve aylık gelirlerinizi net şekilde görebilirsiniz.", action: "Günlük ve haftalık gelir kartlarını gösterin." },
+  { view: "genel", title: "WhatsApp Hatırlatma", text: "Randevu hatırlatmaları ve müşteri geri çağırmaları WhatsApp üzerinden yönetilebilir.", action: "WhatsApp kartından 'Şimdi Gönder'e basın." },
+  { view: "genel", title: "Size Özel Kurulum", text: "Bu sistem işletmenizin hizmetlerine, fiyatlarına ve çalışma düzenine göre özelleştirilebilir.", action: "Sunumu bitirip teklif aşamasına geçin." },
+];
+
+/* --------------------------- the interactive app --------------------------- */
 function KuaforPanel() {
   const toast = useDemoToast();
   const [appts, setAppts] = useState<Appt[]>(INITIAL);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [custQuery, setCustQuery] = useState("");
   const [newCustomers, setNewCustomers] = useState(4);
 
-  const [selected, setSelected] = useState<Appt | null>(null);
-  const [draft, setDraft] = useState<{ time: string; staff: string; service: string }>({ time: "", staff: "", service: "" });
-  const [confirmId, setConfirmId] = useState<number | null>(null);
+  const [view, setView] = useState("genel");
+  const [presentOpen, setPresentOpen] = useState(false);
 
+  const [selected, setSelected] = useState<Appt | null>(null);
+  const [draft, setDraft] = useState({ time: "", staff: "", service: "" });
+  const [confirmId, setConfirmId] = useState<number | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState({ name: "", phone: "", service: SERVICES[0], staff: STAFF[0], time: SLOTS[4] });
 
-  /* derived, live stats */
+  const [serviceActive, setServiceActive] = useState<Record<string, boolean>>(() => Object.fromEntries(SERVICES.map((s) => [s, true])));
+  const [staffAvail, setStaffAvail] = useState<Record<string, boolean>>(() => Object.fromEntries(STAFF.map((s) => [s, true])));
+  const [settings, setSettings] = useState({ online: true, whatsapp: true, sms: false, kvkk: true });
+  const [workHours, setWorkHours] = useState("09:30 – 18:00");
+  const [interval, setIntervalVal] = useState("45 dk");
+
+  /* derived, live */
   const active = appts.filter((a) => a.status !== "iptal");
   const gelir = appts.filter((a) => a.status === "tamamlandi").reduce((s, a) => s + a.price, 0);
   const doluluk = Math.min(100, Math.round((active.length / DAY_CAPACITY) * 100));
   const haftalik = 56500 + gelir;
+  const aylik = 214000 + gelir;
 
   const serviceCounts = useMemo(() => {
     const m = new Map<string, number>();
     active.forEach((a) => m.set(a.service, (m.get(a.service) ?? 0) + 1));
-    return [...m.entries()].sort((a, b) => b[1] - a[1]);
+    return SERVICES.map((s) => [s, m.get(s) ?? 0] as const).sort((a, b) => b[1] - a[1]);
   }, [active]);
   const maxService = Math.max(1, ...serviceCounts.map(([, c]) => c));
 
-  const staffLoad = STAFF.map((s) => ({
-    name: s,
-    count: active.filter((a) => a.staff === s).length,
-  }));
+  const staffLoad = STAFF.map((s) => ({ name: s, count: active.filter((a) => a.staff === s).length }));
+
+  const customers = useMemo(() => {
+    const m = new Map<string, { name: string; phone: string; visits: number; last: string }>();
+    appts.forEach((a) => {
+      const e = m.get(a.name);
+      if (e) { e.visits += 1; e.last = a.service; }
+      else m.set(a.name, { name: a.name, phone: a.phone, visits: 1, last: a.service });
+    });
+    return [...m.values()];
+  }, [appts]);
+
+  const counts = {
+    toplam: active.length,
+    onayli: appts.filter((a) => a.status === "onayli").length,
+    bekliyor: appts.filter((a) => a.status === "bekliyor").length,
+    tamamlandi: appts.filter((a) => a.status === "tamamlandi").length,
+  };
 
   const visible = appts.filter((a) => {
     if (statusFilter !== "all" && a.status !== statusFilter) return false;
     const q = query.trim().toLocaleLowerCase("tr");
     if (!q) return true;
-    return (
-      a.name.toLocaleLowerCase("tr").includes(q) ||
-      a.service.toLocaleLowerCase("tr").includes(q)
-    );
+    return a.name.toLocaleLowerCase("tr").includes(q) || a.service.toLocaleLowerCase("tr").includes(q);
   });
 
   /* actions */
@@ -172,13 +224,7 @@ function KuaforPanel() {
   }
   function saveDetail() {
     if (!selected) return;
-    setAppts((prev) =>
-      prev.map((x) =>
-        x.id === selected.id
-          ? { ...x, time: draft.time, staff: draft.staff, service: draft.service, price: SERVICE_PRICES[draft.service] }
-          : x,
-      ),
-    );
+    setAppts((prev) => prev.map((x) => (x.id === selected.id ? { ...x, time: draft.time, staff: draft.staff, service: draft.service, price: SERVICE_PRICES[draft.service] } : x)));
     toast({ title: "Randevu güncellendi", desc: `${selected.name} · ${draft.staff} · ${draft.time}`, tone: "default", icon: Pencil });
     setSelected(null);
   }
@@ -188,236 +234,335 @@ function KuaforPanel() {
       return;
     }
     const id = Math.max(0, ...appts.map((a) => a.id)) + 1;
-    const appt: Appt = {
-      id,
-      time: form.time,
-      name: form.name.trim(),
-      phone: form.phone.trim() || "—",
-      service: form.service,
-      staff: form.staff,
-      price: SERVICE_PRICES[form.service],
-      status: "yeni",
-    };
+    const appt: Appt = { id, time: form.time, name: form.name.trim(), phone: form.phone.trim() || "—", service: form.service, staff: form.staff, price: SERVICE_PRICES[form.service], status: "yeni" };
     setAppts((prev) => [...prev, appt].sort((a, b) => a.time.localeCompare(b.time)));
     setNewCustomers((n) => n + 1);
     toast({ title: "Yeni müşteri eklendi", desc: `${appt.name} · ${appt.time}`, tone: "success", icon: UserPlus });
     setForm({ name: "", phone: "", service: SERVICES[0], staff: STAFF[0], time: SLOTS[4] });
     setAddOpen(false);
   }
+  function openCustomer(name: string) {
+    const ap = [...appts].reverse().find((a) => a.name === name);
+    if (ap) openDetail(ap);
+  }
 
-  return (
-    <BrowserFrame url="kuaforos.app/pano">
-      <div className="grid gap-3 lg:grid-cols-[180px_1fr]">
-        {/* sidebar */}
-        <aside className="hidden flex-col gap-1 rounded-xl bg-[var(--d-bg-soft)] p-3 lg:flex">
-          <div className="mb-2 flex items-center gap-2 px-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--d-accent)] text-[var(--d-accent-fg)]">
-              <Scissors className="h-4 w-4" />
-            </span>
-            <span className="text-[13px] font-bold text-[var(--d-fg)]">Kuaför OS</span>
-          </div>
-          {[
-            { icon: LayoutDashboard, label: "Pano", active: true },
-            { icon: CalendarDays, label: "Randevular" },
-            { icon: Users, label: "Müşteriler" },
-            { icon: Scissors, label: "Hizmetler" },
-            { icon: Wallet, label: "Gelir" },
-          ].map((n) => (
-            <span
-              key={n.label}
-              className={
-                "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12px] font-medium " +
-                (n.active ? "bg-[var(--d-accent)]/15 text-[var(--d-accent)]" : "text-[var(--d-muted)]")
-              }
-            >
-              <n.icon className="h-4 w-4" />
-              {n.label}
-            </span>
-          ))}
-        </aside>
+  /* ---------- appointment row (shared by Genel & Randevular) ---------- */
+  function apptRow(a: Appt) {
+    const meta = STATUS_META[a.status];
+    const isActive = a.status === "onayli" || a.status === "bekliyor" || a.status === "yeni";
+    return (
+      <li
+        key={a.id}
+        onClick={() => openDetail(a)}
+        className={
+          "group flex cursor-pointer items-center gap-3 rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] px-3 py-2.5 transition-colors hover:border-[var(--d-accent)]/40 " +
+          (a.status === "iptal" ? "opacity-60" : "")
+        }
+      >
+        <span className="w-11 text-[12px] font-semibold tabular-nums text-[var(--d-accent)]">{a.time}</span>
+        <Avatar name={a.name} className="h-8 w-8" />
+        <div className="min-w-0 flex-1">
+          <div className={"truncate text-[12.5px] font-medium text-[var(--d-fg)] " + (a.status === "iptal" ? "line-through" : "")}>{a.name}</div>
+          <div className="truncate text-[11px] text-[var(--d-faint)]">{a.service} · {a.staff}</div>
+        </div>
+        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+          {isActive && (
+            <>
+              <IconButton icon={Check} label="Tamamla" tone="success" onClick={() => complete(a)} />
+              <IconButton icon={X} label="İptal et" tone="danger" onClick={() => setConfirmId(a.id)} />
+            </>
+          )}
+          {a.status === "iptal" && (
+            <button type="button" onClick={() => restore(a)} className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-semibold text-[var(--d-accent)] hover:bg-[var(--d-accent)]/12">
+              <RotateCcw className="h-3 w-3" /> Geri Al
+            </button>
+          )}
+          {a.status === "tamamlandi" && <Tag tone={meta.tone}>{meta.label}</Tag>}
+          {isActive && <span className="hidden sm:block"><Tag tone={meta.tone}>{meta.label}</Tag></span>}
+        </div>
+      </li>
+    );
+  }
 
-        {/* main */}
-        <div className="space-y-3">
-          {/* live stats */}
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <StatTile label="Bugünkü Randevu" value={<DemoCounter value={active.length} />} delta="+3" icon={CalendarDays} />
-            <StatTile label="Doluluk" value={<DemoCounter value={doluluk} format={(n) => `%${Math.round(n)}`} />} delta="+12%" icon={TrendingUp} />
-            <StatTile label="Günlük Gelir" value={<DemoCounter value={gelir} format={(n) => `₺${fmtTRY(n)}`} />} delta="+18%" icon={Wallet} />
-            <StatTile label="Yeni Müşteri" value={<DemoCounter value={newCustomers} />} delta="+2" icon={UserPlus} />
-          </div>
-
-          <div className="grid gap-3 lg:grid-cols-[1.3fr_1fr]">
-            {/* appointments — interactive */}
-            <Panel
-              title="Bugünün Randevuları"
-              action={
-                <button
-                  type="button"
-                  onClick={() => setAddOpen(true)}
-                  className="inline-flex items-center gap-1 rounded-full bg-[var(--d-accent)] px-2.5 py-1 text-[11px] font-semibold text-[var(--d-accent-fg)] transition-transform hover:scale-[1.03]"
-                >
-                  <Plus className="h-3 w-3" /> Müşteri Ekle
-                </button>
-              }
-            >
-              <div className="mb-2.5 space-y-2">
-                <SearchInput value={query} onChange={setQuery} placeholder="Müşteri veya hizmet ara…" />
-                <FilterChips options={STATUS_FILTERS} value={statusFilter} onChange={setStatusFilter} />
-              </div>
-              <ul className="space-y-2">
-                {visible.map((a) => {
-                  const meta = STATUS_META[a.status];
-                  const isActive = a.status === "onayli" || a.status === "bekliyor" || a.status === "yeni";
-                  return (
-                    <li
-                      key={a.id}
-                      onClick={() => openDetail(a)}
-                      className={
-                        "group flex cursor-pointer items-center gap-3 rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] px-3 py-2.5 transition-colors hover:border-[var(--d-accent)]/40 " +
-                        (a.status === "iptal" ? "opacity-60" : "")
-                      }
-                    >
-                      <span className="w-11 text-[12px] font-semibold tabular-nums text-[var(--d-accent)]">{a.time}</span>
-                      <Avatar name={a.name} className="h-8 w-8" />
-                      <div className="min-w-0 flex-1">
-                        <div className={"truncate text-[12.5px] font-medium text-[var(--d-fg)] " + (a.status === "iptal" ? "line-through" : "")}>
-                          {a.name}
-                        </div>
-                        <div className="truncate text-[11px] text-[var(--d-faint)]">{a.service} · {a.staff}</div>
-                      </div>
-                      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                        {isActive && (
-                          <>
-                            <IconButton icon={Check} label="Tamamla" tone="success" onClick={() => complete(a)} />
-                            <IconButton icon={X} label="İptal et" tone="danger" onClick={() => setConfirmId(a.id)} />
-                          </>
-                        )}
-                        {a.status === "iptal" && (
-                          <button
-                            type="button"
-                            onClick={() => restore(a)}
-                            className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-semibold text-[var(--d-accent)] hover:bg-[var(--d-accent)]/12"
-                          >
-                            <RotateCcw className="h-3 w-3" /> Geri Al
-                          </button>
-                        )}
-                        {a.status === "tamamlandi" && <Tag tone={meta.tone}>{meta.label}</Tag>}
-                        {(a.status === "onayli" || a.status === "bekliyor" || a.status === "yeni") && (
-                          <span className="hidden sm:block">
-                            <Tag tone={meta.tone}>{meta.label}</Tag>
-                          </span>
-                        )}
-                      </div>
-                    </li>
-                  );
-                })}
-                {visible.length === 0 && (
-                  <li className="rounded-xl border border-dashed border-[var(--d-border)] px-3 py-6 text-center text-[12px] text-[var(--d-faint)]">
-                    Sonuç bulunamadı.
-                  </li>
-                )}
-              </ul>
-            </Panel>
-
-            {/* right column */}
-            <div className="space-y-3">
-              <Panel title="Haftalık Gelir">
-                <div className="flex items-end justify-between">
-                  <div>
-                    <div className="text-2xl font-bold text-[var(--d-fg)]">
-                      ₺<DemoCounter value={haftalik} format={(n) => fmtTRY(n)} />
-                    </div>
-                    <div className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--d-pos)]">
-                      <TrendingUp className="h-3 w-3" /> bugünkü gelir dahil
-                    </div>
-                  </div>
-                  <Coins className="h-5 w-5 text-[var(--d-accent)]" />
-                </div>
-                <Sparkline data={[20, 32, 28, 41, 38, 52, 60]} className="mt-3 h-10" />
-              </Panel>
-
-              <Panel title="Popüler Hizmetler">
-                <ul className="space-y-2.5">
-                  {serviceCounts.slice(0, 4).map(([name, count]) => (
-                    <li key={name}>
-                      <div className="flex items-center justify-between text-[12px]">
-                        <span className="text-[var(--d-muted)]">{name}</span>
-                        <span className="font-semibold text-[var(--d-fg)]">{count}</span>
-                      </div>
-                      <Bar value={(count / maxService) * 100} className="mt-1" />
-                    </li>
-                  ))}
-                </ul>
-              </Panel>
+  /* ---------- VIEWS ---------- */
+  function genelView() {
+    return (
+      <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <StatTile label="Bugünkü Randevu" value={<DemoCounter value={active.length} />} delta="+3" icon={CalendarDays} />
+          <StatTile label="Doluluk" value={<DemoCounter value={doluluk} format={(n) => `%${Math.round(n)}`} />} delta="+12%" icon={TrendingUp} />
+          <StatTile label="Günlük Gelir" value={<DemoCounter value={gelir} format={(n) => `₺${fmtTRY(n)}`} />} delta="+18%" icon={Wallet} />
+          <StatTile label="Yeni Müşteri" value={<DemoCounter value={newCustomers} />} delta="+2" icon={UserPlus} />
+        </div>
+        <div className="grid gap-3 lg:grid-cols-[1.3fr_1fr]">
+          <Panel title="Bugünün Randevuları" action={<button type="button" onClick={() => setAddOpen(true)} className="inline-flex items-center gap-1 rounded-full bg-[var(--d-accent)] px-2.5 py-1 text-[11px] font-semibold text-[var(--d-accent-fg)] transition-transform hover:scale-[1.03]"><Plus className="h-3 w-3" /> Müşteri Ekle</button>}>
+            <div className="mb-2.5 space-y-2">
+              <SearchInput value={query} onChange={setQuery} placeholder="Müşteri veya hizmet ara…" />
+              <FilterChips options={STATUS_FILTERS} value={statusFilter} onChange={setStatusFilter} />
             </div>
-          </div>
-
-          {/* staff load + whatsapp */}
-          <div className="grid gap-3 lg:grid-cols-[1.3fr_1fr]">
-            <Panel title="Personel Programı" action="Bugün">
-              <div className="space-y-3">
-                {staffLoad.map((p) => (
-                  <div key={p.name} className="flex items-center gap-3">
-                    <div className="w-24 shrink-0">
-                      <div className="truncate text-[12px] font-medium text-[var(--d-fg)]">{p.name}</div>
-                      <div className="text-[10px] text-[var(--d-faint)]">{p.count} randevu</div>
-                    </div>
-                    <div className="flex flex-1 items-center gap-2">
-                      <Bar value={(p.count / Math.max(1, active.length)) * 100} />
-                      <span className="w-7 shrink-0 text-right text-[11px] font-semibold text-[var(--d-fg)]">{p.count}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Panel>
-
-            <Panel title="WhatsApp Hatırlatma" action="Otomatik">
-              <div className="flex items-start gap-3 rounded-xl bg-[#25D366]/10 p-3">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#25D366] text-[#06210f]">
-                  <MessageCircle className="h-4 w-4" />
-                </span>
-                <div className="text-[12px] leading-relaxed text-[var(--d-muted)]">
-                  Yarın randevusu olan <span className="font-semibold text-[var(--d-fg)]">{active.length}</span> müşteriye
-                  otomatik hatırlatma hazır.
-                  <div className="mt-2">
-                    <button
-                      type="button"
-                      onClick={() => toast({ title: "Hatırlatmalar gönderildi", desc: `${active.length} müşteriye WhatsApp mesajı`, tone: "success", icon: MessageCircle })}
-                      className="rounded-full bg-[#25D366] px-3 py-1 text-[10px] font-semibold text-[#06210f] transition-transform hover:scale-[1.03]"
-                    >
-                      Şimdi Gönder
-                    </button>
-                  </div>
+            <ul className="space-y-2">
+              {visible.slice(0, 6).map((a) => apptRow(a))}
+              {visible.length === 0 && <li className="rounded-xl border border-dashed border-[var(--d-border)] px-3 py-6 text-center text-[12px] text-[var(--d-faint)]">Sonuç bulunamadı.</li>}
+            </ul>
+          </Panel>
+          <div className="space-y-3">
+            <Panel title="Haftalık Gelir">
+              <div className="flex items-end justify-between">
+                <div>
+                  <div className="text-2xl font-bold text-[var(--d-fg)]">₺<DemoCounter value={haftalik} format={(n) => fmtTRY(n)} /></div>
+                  <div className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--d-pos)]"><TrendingUp className="h-3 w-3" /> bugünkü gelir dahil</div>
                 </div>
+                <Coins className="h-5 w-5 text-[var(--d-accent)]" />
               </div>
-              <div className="mt-3 flex items-center justify-between rounded-xl border border-[var(--d-border)] px-3 py-2 text-[11px]">
-                <span className="inline-flex items-center gap-1.5 text-[var(--d-muted)]">
-                  <Crown className="h-3.5 w-3.5 text-[var(--d-accent)]" /> Sadık müşteri
-                </span>
-                <span className="font-semibold text-[var(--d-fg)]">12. ziyaret · %10 indirim</span>
-              </div>
+              <Sparkline data={[20, 32, 28, 41, 38, 52, 60]} className="mt-3 h-10" />
+            </Panel>
+            <Panel title="Popüler Hizmetler">
+              <ul className="space-y-2.5">
+                {serviceCounts.slice(0, 4).map(([name, count]) => (
+                  <li key={name}>
+                    <div className="flex items-center justify-between text-[12px]"><span className="text-[var(--d-muted)]">{name}</span><span className="font-semibold text-[var(--d-fg)]">{count}</span></div>
+                    <Bar value={(count / maxService) * 100} className="mt-1" />
+                  </li>
+                ))}
+              </ul>
             </Panel>
           </div>
         </div>
+        <div className="grid gap-3 lg:grid-cols-[1.3fr_1fr]">
+          <Panel title="Personel Programı" action="Bugün">
+            <div className="space-y-3">
+              {staffLoad.map((p) => (
+                <div key={p.name} className="flex items-center gap-3">
+                  <div className="w-24 shrink-0">
+                    <div className="truncate text-[12px] font-medium text-[var(--d-fg)]">{p.name}</div>
+                    <div className="text-[10px] text-[var(--d-faint)]">{p.count} randevu</div>
+                  </div>
+                  <div className="flex flex-1 items-center gap-2">
+                    <Bar value={(p.count / Math.max(1, active.length)) * 100} />
+                    <span className="w-7 shrink-0 text-right text-[11px] font-semibold text-[var(--d-fg)]">{p.count}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Panel>
+          <Panel title="WhatsApp Hatırlatma" action="Otomatik">
+            <div className="flex items-start gap-3 rounded-xl bg-[#25D366]/10 p-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#25D366] text-[#06210f]"><MessageCircle className="h-4 w-4" /></span>
+              <div className="text-[12px] leading-relaxed text-[var(--d-muted)]">
+                Yarın randevusu olan <span className="font-semibold text-[var(--d-fg)]">{active.length}</span> müşteriye otomatik hatırlatma hazır.
+                <div className="mt-2">
+                  <button type="button" onClick={() => toast({ title: "Hatırlatmalar gönderildi", desc: `${active.length} müşteriye WhatsApp mesajı`, tone: "success", icon: MessageCircle })} className="rounded-full bg-[#25D366] px-3 py-1 text-[10px] font-semibold text-[#06210f] transition-transform hover:scale-[1.03]">Şimdi Gönder</button>
+                </div>
+              </div>
+            </div>
+            <div className="mt-3 flex items-center justify-between rounded-xl border border-[var(--d-border)] px-3 py-2 text-[11px]">
+              <span className="inline-flex items-center gap-1.5 text-[var(--d-muted)]"><Crown className="h-3.5 w-3.5 text-[var(--d-accent)]" /> Sadık müşteri</span>
+              <span className="font-semibold text-[var(--d-fg)]">12. ziyaret · %10 indirim</span>
+            </div>
+          </Panel>
+        </div>
+      </div>
+    );
+  }
+
+  function randevularView() {
+    const chips = [
+      { k: "Toplam", v: counts.toplam },
+      { k: "Onaylı", v: counts.onayli },
+      { k: "Bekliyor", v: counts.bekliyor },
+      { k: "Tamamlandı", v: counts.tamamlandi },
+    ];
+    return (
+      <Panel title="Tüm Randevular" action={<button type="button" onClick={() => setAddOpen(true)} className="inline-flex items-center gap-1 rounded-full bg-[var(--d-accent)] px-2.5 py-1 text-[11px] font-semibold text-[var(--d-accent-fg)] transition-transform hover:scale-[1.03]"><Plus className="h-3 w-3" /> Müşteri Ekle</button>}>
+        <div className="mb-3 grid grid-cols-4 gap-2">
+          {chips.map((c) => (
+            <div key={c.k} className="rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] px-3 py-2 text-center">
+              <div className="text-lg font-bold text-[var(--d-fg)]">{c.v}</div>
+              <div className="text-[10px] text-[var(--d-faint)]">{c.k}</div>
+            </div>
+          ))}
+        </div>
+        <div className="mb-2.5 space-y-2">
+          <SearchInput value={query} onChange={setQuery} placeholder="Müşteri veya hizmet ara…" />
+          <FilterChips options={STATUS_FILTERS} value={statusFilter} onChange={setStatusFilter} />
+        </div>
+        <ul className="space-y-2">
+          {visible.map((a) => apptRow(a))}
+          {visible.length === 0 && <li className="rounded-xl border border-dashed border-[var(--d-border)] px-3 py-8 text-center text-[12px] text-[var(--d-faint)]">Bu filtreyle randevu yok.</li>}
+        </ul>
+      </Panel>
+    );
+  }
+
+  function musterilerView() {
+    const list = customers.filter((c) => c.name.toLocaleLowerCase("tr").includes(custQuery.trim().toLocaleLowerCase("tr")));
+    return (
+      <Panel title="Müşteriler" action={<button type="button" onClick={() => setAddOpen(true)} className="inline-flex items-center gap-1 rounded-full bg-[var(--d-accent)] px-2.5 py-1 text-[11px] font-semibold text-[var(--d-accent-fg)] transition-transform hover:scale-[1.03]"><Plus className="h-3 w-3" /> Yeni Müşteri</button>}>
+        <div className="mb-2.5"><SearchInput value={custQuery} onChange={setCustQuery} placeholder="Müşteri ara…" /></div>
+        <ul className="grid gap-2 sm:grid-cols-2">
+          {list.map((c) => (
+            <li key={c.name} onClick={() => openCustomer(c.name)} className="group flex cursor-pointer items-center gap-3 rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] px-3 py-2.5 transition-colors hover:border-[var(--d-accent)]/40">
+              <Avatar name={c.name} className="h-9 w-9" />
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-[12.5px] font-medium text-[var(--d-fg)]">{c.name}</div>
+                <div className="truncate text-[11px] text-[var(--d-faint)]">{c.phone}</div>
+              </div>
+              <div className="text-right">
+                <div className="text-[11px] font-semibold text-[var(--d-fg)]">{c.visits} ziyaret</div>
+                <div className="text-[10px] text-[var(--d-faint)]">{c.last}</div>
+              </div>
+            </li>
+          ))}
+          {list.length === 0 && <li className="rounded-xl border border-dashed border-[var(--d-border)] px-3 py-8 text-center text-[12px] text-[var(--d-faint)] sm:col-span-2">Müşteri bulunamadı.</li>}
+        </ul>
+      </Panel>
+    );
+  }
+
+  function hizmetlerView() {
+    return (
+      <Panel title="Hizmetler & Fiyatlar" action={`${SERVICES.filter((s) => serviceActive[s]).length} aktif`}>
+        <ul className="space-y-2">
+          {serviceCounts.map(([name, count]) => (
+            <li key={name} className="flex items-center gap-3 rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] px-3 py-2.5">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--d-accent)]/15 text-[var(--d-accent)]"><Scissors className="h-4 w-4" /></span>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-[12.5px] font-medium text-[var(--d-fg)]">{name}</div>
+                <div className="text-[11px] text-[var(--d-faint)]">Bugün {count} kez · ₺{fmtTRY(SERVICE_PRICES[name])}</div>
+              </div>
+              <span className="text-[11px] font-medium text-[var(--d-muted)]">{serviceActive[name] ? "Aktif" : "Pasif"}</span>
+              <Toggle checked={serviceActive[name]} onChange={(v) => { setServiceActive((s) => ({ ...s, [name]: v })); toast({ title: v ? "Hizmet aktifleştirildi" : "Hizmet pasifleştirildi", desc: name, tone: v ? "success" : "warn", icon: Scissors }); }} />
+            </li>
+          ))}
+        </ul>
+      </Panel>
+    );
+  }
+
+  function personellerView() {
+    return (
+      <div className="grid gap-3 sm:grid-cols-2">
+        {staffLoad.map((p) => (
+          <Panel key={p.name} title={p.name} action={STAFF_ROLE[p.name]}>
+            <div className="flex items-center gap-3">
+              <Avatar name={p.name} className="h-11 w-11 text-[13px]" />
+              <div className="flex-1">
+                <div className="flex items-center justify-between text-[12px]"><span className="text-[var(--d-muted)]">Bugünkü doluluk</span><span className="font-semibold text-[var(--d-fg)]">{p.count} randevu</span></div>
+                <Bar value={(p.count / Math.max(1, active.length)) * 100} className="mt-1.5" />
+              </div>
+            </div>
+            <div className="mt-3 flex items-center justify-between rounded-xl border border-[var(--d-border)] px-3 py-2">
+              <span className="text-[12px] font-medium text-[var(--d-fg)]">{staffAvail[p.name] ? "Müsait" : "İzinli"}</span>
+              <Toggle checked={staffAvail[p.name]} onChange={(v) => { setStaffAvail((s) => ({ ...s, [p.name]: v })); toast({ title: v ? "Personel müsait" : "Personel izinli", desc: p.name, tone: v ? "success" : "warn", icon: UserCog }); }} />
+            </div>
+          </Panel>
+        ))}
+      </div>
+    );
+  }
+
+  function gelirView() {
+    const revByService = SERVICES.map((s) => ({ s, rev: appts.filter((a) => a.service === s && a.status === "tamamlandi").reduce((x, a) => x + a.price, 0) })).filter((r) => r.rev > 0).sort((a, b) => b.rev - a.rev);
+    const maxRev = Math.max(1, ...revByService.map((r) => r.rev));
+    return (
+      <div className="space-y-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <StatTile label="Günlük Gelir" value={<DemoCounter value={gelir} format={(n) => `₺${fmtTRY(n)}`} />} delta="+18%" icon={Wallet} />
+          <StatTile label="Haftalık Gelir" value={<DemoCounter value={haftalik} format={(n) => `₺${fmtTRY(n)}`} />} delta="+12%" icon={TrendingUp} />
+          <StatTile label="Aylık Gelir" value={<DemoCounter value={aylik} format={(n) => `₺${fmtTRY(n)}`} />} delta="+9%" icon={Coins} />
+        </div>
+        <Panel title="Son 7 Gün" action={<button type="button" onClick={() => toast({ title: "Rapor hazırlandı", desc: "Haftalık gelir raporu indirildi", tone: "success", icon: Download })} className="inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--d-accent)]"><Download className="h-3.5 w-3.5" /> Rapor İndir</button>}>
+          <MiniBars data={[42, 55, 48, 63, 58, 71, Math.max(20, Math.round(gelir / 200))]} className="h-24" />
+          <div className="mt-2 flex items-center justify-between text-[10px] text-[var(--d-faint)]"><span>Pzt</span><span>Sal</span><span>Çar</span><span>Per</span><span>Cum</span><span>Cmt</span><span>Bugün</span></div>
+        </Panel>
+        <Panel title="Hizmet Bazlı Gelir (Bugün)">
+          {revByService.length === 0 ? (
+            <div className="px-1 py-6 text-center text-[12px] text-[var(--d-faint)]">Henüz tamamlanan işlem yok. Bir randevuyu tamamlayın.</div>
+          ) : (
+            <ul className="space-y-2.5">
+              {revByService.map((r) => (
+                <li key={r.s}>
+                  <div className="flex items-center justify-between text-[12px]"><span className="text-[var(--d-muted)]">{r.s}</span><span className="font-semibold text-[var(--d-fg)]">₺{fmtTRY(r.rev)}</span></div>
+                  <Bar value={(r.rev / maxRev) * 100} className="mt-1" />
+                </li>
+              ))}
+            </ul>
+          )}
+        </Panel>
+      </div>
+    );
+  }
+
+  function ayarlarView() {
+    const rows: { k: keyof typeof settings; label: string; desc: string }[] = [
+      { k: "online", label: "Online Randevu", desc: "Müşteriler web sitenizden randevu alabilir." },
+      { k: "whatsapp", label: "WhatsApp Hatırlatma", desc: "Randevudan önce otomatik hatırlatma gönderilir." },
+      { k: "sms", label: "SMS Hatırlatma", desc: "WhatsApp'a ek olarak SMS gönderilir." },
+      { k: "kvkk", label: "KVKK Onayı", desc: "Müşteri kayıtlarında KVKK metni gösterilir." },
+    ];
+    return (
+      <div className="space-y-3">
+        <Panel title="Çalışma Ayarları">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <SelectField label="Çalışma Saatleri" value={workHours} onChange={setWorkHours} options={["09:30 – 18:00", "10:00 – 20:00", "09:00 – 21:00"]} />
+            <SelectField label="Randevu Aralığı" value={interval} onChange={setIntervalVal} options={["30 dk", "45 dk", "60 dk"]} />
+          </div>
+        </Panel>
+        <Panel title="Bildirimler & Tercihler">
+          <ul className="space-y-1">
+            {rows.map((r) => (
+              <li key={r.k} className="flex items-center gap-3 rounded-xl px-1 py-2.5">
+                <div className="min-w-0 flex-1">
+                  <div className="text-[13px] font-medium text-[var(--d-fg)]">{r.label}</div>
+                  <div className="text-[11px] text-[var(--d-faint)]">{r.desc}</div>
+                </div>
+                <Toggle checked={settings[r.k]} onChange={(v) => setSettings((s) => ({ ...s, [r.k]: v }))} />
+              </li>
+            ))}
+          </ul>
+          <div className="mt-3 flex justify-end">
+            <DemoActionButton variant="solid" onClick={() => toast({ title: "Ayarlar kaydedildi", desc: "Tercihleriniz güncellendi", tone: "success", icon: Settings })}>Kaydet</DemoActionButton>
+          </div>
+        </Panel>
+      </div>
+    );
+  }
+
+  function renderView() {
+    switch (view) {
+      case "randevular": return randevularView();
+      case "musteriler": return musterilerView();
+      case "hizmetler": return hizmetlerView();
+      case "personeller": return personellerView();
+      case "gelir": return gelirView();
+      case "ayarlar": return ayarlarView();
+      default: return genelView();
+    }
+  }
+
+  return (
+    <BrowserFrame url="kuaforos.app/pano">
+      <div className="lg:grid lg:grid-cols-[180px_1fr] lg:gap-3">
+        <DemoSidebar brand={{ icon: Scissors, name: "Kuaför OS" }} items={SIDEBAR} active={view} onSelect={setView} onPresent={() => setPresentOpen(true)} />
+        <div>
+          <DemoMobileNav items={SIDEBAR} active={view} onSelect={setView} onPresent={() => setPresentOpen(true)} />
+          <AnimatedView id={view}>{renderView()}</AnimatedView>
+        </div>
       </div>
 
-      {/* customer / appointment detail modal */}
+      {/* detail modal */}
       <DemoModal
         open={!!selected}
         onClose={() => setSelected(null)}
         title={selected ? selected.name : ""}
-        footer={
-          selected && (
-            <>
-              {selected.status !== "tamamlandi" && selected.status !== "iptal" && (
-                <DemoActionButton variant="ghost" onClick={() => { complete(selected); setSelected(null); }}>
-                  <Check className="h-4 w-4" /> Tamamla
-                </DemoActionButton>
-              )}
-              <DemoActionButton variant="solid" onClick={saveDetail}>Kaydet</DemoActionButton>
-            </>
-          )
-        }
+        footer={selected && (
+          <>
+            {selected.status !== "tamamlandi" && selected.status !== "iptal" && (
+              <DemoActionButton variant="ghost" onClick={() => { complete(selected); setSelected(null); }}><Check className="h-4 w-4" /> Tamamla</DemoActionButton>
+            )}
+            <DemoActionButton variant="solid" onClick={saveDetail}>Kaydet</DemoActionButton>
+          </>
+        )}
       >
         {selected && (
           <div className="space-y-4">
@@ -425,9 +570,7 @@ function KuaforPanel() {
               <Avatar name={selected.name} className="h-11 w-11 text-[13px]" />
               <div className="min-w-0 flex-1">
                 <div className="text-[14px] font-semibold text-[var(--d-fg)]">{selected.name}</div>
-                <div className="inline-flex items-center gap-1.5 text-[12px] text-[var(--d-muted)]">
-                  <Clock className="h-3.5 w-3.5" /> {selected.phone}
-                </div>
+                <div className="inline-flex items-center gap-1.5 text-[12px] text-[var(--d-muted)]"><Clock className="h-3.5 w-3.5" /> {selected.phone}</div>
               </div>
               <Tag tone={STATUS_META[selected.status].tone}>{STATUS_META[selected.status].label}</Tag>
             </div>
@@ -436,28 +579,13 @@ function KuaforPanel() {
               <SelectField label="Personel" value={draft.staff} onChange={(v) => setDraft((d) => ({ ...d, staff: v }))} options={STAFF} />
             </div>
             <SelectField label="Hizmet" value={draft.service} onChange={(v) => setDraft((d) => ({ ...d, service: v }))} options={SERVICES} />
-            <div className="flex items-center justify-between rounded-xl border border-[var(--d-border)] px-3 py-2.5 text-[13px]">
-              <span className="text-[var(--d-muted)]">Ücret</span>
-              <span className="font-bold text-[var(--d-accent)]">₺{fmtTRY(SERVICE_PRICES[draft.service])}</span>
-            </div>
+            <div className="flex items-center justify-between rounded-xl border border-[var(--d-border)] px-3 py-2.5 text-[13px]"><span className="text-[var(--d-muted)]">Ücret</span><span className="font-bold text-[var(--d-accent)]">₺{fmtTRY(SERVICE_PRICES[draft.service])}</span></div>
           </div>
         )}
       </DemoModal>
 
-      {/* add customer modal */}
-      <DemoModal
-        open={addOpen}
-        onClose={() => setAddOpen(false)}
-        title="Yeni Müşteri / Randevu"
-        footer={
-          <>
-            <DemoActionButton variant="ghost" onClick={() => setAddOpen(false)}>Vazgeç</DemoActionButton>
-            <DemoActionButton variant="solid" onClick={addCustomer}>
-              <Plus className="h-4 w-4" /> Ekle
-            </DemoActionButton>
-          </>
-        }
-      >
+      {/* add modal */}
+      <DemoModal open={addOpen} onClose={() => setAddOpen(false)} title="Yeni Müşteri / Randevu" footer={<><DemoActionButton variant="ghost" onClick={() => setAddOpen(false)}>Vazgeç</DemoActionButton><DemoActionButton variant="solid" onClick={addCustomer}><Plus className="h-4 w-4" /> Ekle</DemoActionButton></>}>
         <div className="space-y-3">
           <TextField label="Ad Soyad" value={form.name} onChange={(v) => setForm((f) => ({ ...f, name: v }))} placeholder="Örn. Emre Yıldız" />
           <TextField label="Telefon" value={form.phone} onChange={(v) => setForm((f) => ({ ...f, phone: v }))} placeholder="05__ ___ __ __" />
@@ -469,16 +597,9 @@ function KuaforPanel() {
         </div>
       </DemoModal>
 
-      {/* cancel confirmation */}
-      <ConfirmDialog
-        open={confirmId !== null}
-        title="Randevu iptal edilsin mi?"
-        message="Bu randevu iptal edilecek. İstediğiniz zaman geri alabilirsiniz."
-        confirmLabel="Evet, iptal et"
-        cancelLabel="Vazgeç"
-        onConfirm={() => confirmId !== null && cancel(confirmId)}
-        onClose={() => setConfirmId(null)}
-      />
+      <ConfirmDialog open={confirmId !== null} title="Randevu iptal edilsin mi?" message="Bu randevu iptal edilecek. İstediğiniz zaman geri alabilirsiniz." confirmLabel="Evet, iptal et" cancelLabel="Vazgeç" onConfirm={() => confirmId !== null && cancel(confirmId)} onClose={() => setConfirmId(null)} />
+
+      <PresentationMode open={presentOpen} steps={STEPS} onClose={() => setPresentOpen(false)} onStepView={setView} />
     </BrowserFrame>
   );
 }
@@ -492,7 +613,6 @@ const PROBLEMS = [
   "Günlük ciro ve popüler hizmetler deftere yazılıyor; gerçek rakamlar net değil.",
   "Hatırlatma yapılmıyor; müşteri randevusunu unutuyor, tekrar gelişler takip edilemiyor.",
 ];
-
 const SOLUTIONS = [
   { icon: CalendarDays, title: "7/24 Online Randevu", text: "Müşteriler boş saatleri görüp kendi randevusunu alır. Telefon trafiği biter, takvim otomatik dolar." },
   { icon: Bell, title: "Otomatik WhatsApp Hatırlatma", text: "Randevudan önce otomatik hatırlatma gider; no-show oranı belirgin şekilde düşer." },
@@ -501,7 +621,6 @@ const SOLUTIONS = [
   { icon: Wallet, title: "Gelir & Performans Takibi", text: "Günlük/haftalık ciro, en çok tercih edilen hizmetler ve personel performansı net rakamlarla." },
   { icon: Images, title: "Önce / Sonra Galeri", text: "Yapılan işleri sergileyen galeri ile yeni müşteri güveni ve sosyal medya içeriği." },
 ];
-
 const FEATURES = [
   { icon: CalendarDays, title: "Online Randevu Takvimi", text: "Boş saatleri gösteren, çakışmayı engelleyen akıllı takvim." },
   { icon: Bell, title: "WhatsApp Hatırlatma", text: "Otomatik randevu hatırlatma ve onay mesajları." },
@@ -513,13 +632,11 @@ const FEATURES = [
   { icon: Repeat, title: "Tekrar Randevu & Sadakat", text: "Düzenli müşterileri geri getiren hatırlatmalar." },
   { icon: Images, title: "Önce / Sonra Galeri", text: "İşlerinizi sergileyen profesyonel vitrin." },
 ];
-
 const PLANS = [
   { name: "Başlangıç", tagline: "Tek koltuk / yeni açılan salonlar için", price: "₺", period: "/ özel teklif", features: ["Online randevu takvimi", "Hizmet & fiyat listesi", "WhatsApp ile randevu", "Mobil uyumlu salon sayfası"] },
   { name: "Profesyonel", tagline: "Büyüyen salonlar için en popüler seçim", price: "₺₺", period: "/ özel teklif", highlighted: true, features: ["Başlangıç'taki her şey", "Otomatik WhatsApp hatırlatma", "Personel & vardiya yönetimi", "Müşteri kartları & geçmiş", "Gelir & performans raporu"] },
   { name: "Premium", tagline: "Çok şubeli & kurumsal salonlar", price: "₺₺₺", period: "/ özel teklif", features: ["Profesyonel'deki her şey", "Çoklu şube yönetimi", "Önce/sonra galeri & yorumlar", "Sadakat & kampanya modülü", "Öncelikli destek & danışmanlık"] },
 ];
-
 const SCENARIO_STEPS = [
   { time: "08:50", text: "Salon açılmadan Ahmet Usta paneli açıyor; günün randevularını, hangi personele kimin geleceğini tek bakışta görüyor." },
   { time: "Gün içi", text: "Yeni müşteri Instagram'dan gelip linke tıklıyor, boş saatlerden 15:00'i seçip kendi randevusunu oluşturuyor. Telefon hiç çalmıyor." },
@@ -532,45 +649,24 @@ export function KuaforSite() {
   const img = "/demos/kuafor/salon-interior.webp";
   return (
     <DemoShell theme={demoThemes.kuafor} name="Kuaför OS" sector="Berber & Kuaför Yönetim Sistemi">
-      <DemoHero
-        sector="Berber & Kuaför Yönetim Sistemi"
-        name="Kuaför OS"
-        promise="Sadece bir web sitesi değil; randevudan gelire kadar tüm salonunuzu tek ekrandan yöneten dijital sistem. Telefon trafiğini bitirin, koltukları boş bırakmayın."
-        image={img}
-      />
-
+      <DemoHero sector="Berber & Kuaför Yönetim Sistemi" name="Kuaför OS" promise="Sadece bir web sitesi değil; randevudan gelire kadar tüm salonunuzu tek ekrandan yöneten dijital sistem. Telefon trafiğini bitirin, koltukları boş bırakmayın." image={img} />
       <ProblemSection title="Salonların her gün yaşadığı gerçek sorunlar" items={PROBLEMS} soft />
-
-      <SolutionSection
-        title="Kuaför OS bu sorunları nasıl çözüyor?"
-        subtitle="Randevu, personel, müşteri ve gelir; dağınık defterler yerine tek, akıllı bir panelde."
-        items={SOLUTIONS}
-      />
-
-      <Section
-        id="panel"
-        eyebrow="Canlı Panel"
-        title="Salonunuzu yöneten dijital pano"
-        subtitle="Bu panel gerçekten çalışır: randevuyu tamamlayın, iptal edin, personel değiştirin veya yeni müşteri ekleyin — gelir ve doluluk anında güncellenir."
-      >
+      <SolutionSection title="Kuaför OS bu sorunları nasıl çözüyor?" subtitle="Randevu, personel, müşteri ve gelir; dağınık defterler yerine tek, akıllı bir panelde." items={SOLUTIONS} />
+      <Section id="panel" eyebrow="Canlı Panel" title="Salonunuzu yöneten dijital pano" subtitle="Soldaki menüden her bölüme geçebilir, 'Sunum Modu' ile sistemi adım adım tanıtabilirsiniz. Panel gerçekten çalışır: randevu tamamlayın, müşteri ekleyin — gelir anında güncellenir.">
         <DemoStage>
           <KuaforPanel />
         </DemoStage>
       </Section>
-
       <Section eyebrow="Özellikler" title="Salonunuz için ihtiyacınız olan her şey">
         <FeatureGrid features={FEATURES} />
       </Section>
-
       <Section eyebrow="Örnek Senaryo" title="Bir cumartesi, Kuaför OS ile" soft>
         <Scenario persona="Ahmet Usta — Kadıköy'de 2 koltuklu bir erkek kuaförü işletiyor." steps={SCENARIO_STEPS} />
       </Section>
-
       <Section eyebrow="Paketler" title="İşletmenize göre esnek paketler" subtitle="Fiyatlar salonunuzun büyüklüğüne göre belirlenir. Net teklif için bir mesaj yeterli.">
         <PricingCards plans={PLANS} />
       </Section>
-
-      <FinalCTA />
+      <DemoClosingCTA defaultSector="Berber & Kuaför" />
     </DemoShell>
   );
 }
