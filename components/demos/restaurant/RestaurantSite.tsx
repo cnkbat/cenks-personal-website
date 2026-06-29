@@ -21,6 +21,7 @@ import {
   Play,
   Plus,
   QrCode,
+  RotateCcw,
   Salad,
   Send,
   Settings,
@@ -34,6 +35,7 @@ import {
   Bar,
   BrowserFrame,
   DemoActionButton,
+  DemoAssistant,
   DemoClosingCTA,
   DemoCounter,
   DemoHero,
@@ -43,6 +45,7 @@ import {
   DemoStage,
   FeatureGrid,
   IconButton,
+  LivePanel,
   Panel,
   PhoneFrame,
   PresentationMode,
@@ -58,6 +61,7 @@ import {
   Toggle,
   demoThemes,
   useDemoToast,
+  usePersistentState,
   type PresentationStep,
   type SidebarItem,
 } from "@/components/demos/kit";
@@ -314,13 +318,24 @@ const SIDEBAR: SidebarItem[] = [
 ];
 
 const STEPS: PresentationStep[] = [
-  { view: "menu", title: "Dijital Menü", text: "Menünüzü saniyede güncellersiniz; matbaa masrafı ve eski menü sorunu biter.", action: "Bir kategoriye geçip ürünleri gösterin." },
-  { view: "siparisler", title: "QR Sipariş Akışı", text: "Müşteri masadaki QR'ı okutup kendi siparişini verir; sipariş anında sisteme düşer.", action: "Online siparişlerin tek ekranda toplandığını gösterin." },
-  { view: "masalar", title: "Masa Durumları", text: "Boş, dolu ve rezerve masaları tek ekranda renkli görürsünüz.", action: "Bir masaya tıklayıp durumunu değiştirin." },
-  { view: "rezervasyonlar", title: "Rezervasyonlar", text: "Günün rezervasyonlarını ve durumlarını tek yerden yönetirsiniz.", action: "Bir rezervasyonu onaylayın." },
-  { view: "mutfak", title: "Mutfak Siparişleri", text: "Siparişler anında mutfağa düşer, hazırlık durumu takip edilir.", action: "Bir siparişi 'Hazır' olarak işaretleyin." },
-  { view: "genel", title: "Günlük Ciro", text: "Günlük cironuzu, en çok satan ürünleri ve yoğunluğu net görürsünüz.", action: "Ciro ve popüler ürün kartlarını gösterin." },
-  { view: "genel", title: "Size Özel Kurulum", text: "Bu sistem işletmenizin menüsüne, masa düzenine ve çalışma şekline göre özelleştirilebilir.", action: "Sunumu bitirip teklif aşamasına geçin." },
+  { view: "genel", title: "Genel Bakış", text: "İşletmenizin günlük cirosunu, dolu masalarını, online siparişlerini ve rezervasyonlarını tek ekranda canlı olarak takip edersiniz.", action: "Salonda olup biten her şeyi tek bakışta görür, hiçbir detayı kaçırmazsınız." },
+  { view: "menu", title: "Dijital Menü", text: "Menünüzü ve fiyatlarınızı saniyeler içinde güncellersiniz; değişiklik anında tüm masalardaki QR menüye yansır.", action: "Matbaa masrafı ve eski menü sorunu tamamen ortadan kalkar." },
+  { view: "siparisler", title: "Tek Ekranda Siparişler", text: "QR masa, Getir, Yemeksepeti ve telefon siparişleriniz tek panelde toplanır; her sipariş anında sisteme düşer.", action: "Farklı uygulamalar arasında kaybolmaz, sipariş hatalarınız azalır." },
+  { view: "masalar", title: "Masa Durumları", text: "Boş, dolu ve rezerve masalarınızı renkli kartlarla anında görürsünüz; oturma süresi ve kişi sayısı her zaman önünüzde.", action: "Müşteriyi kapıda bekletmez, salonu en verimli şekilde doldurursunuz." },
+  { view: "rezervasyonlar", title: "Rezervasyonlar", text: "Günün rezervasyonlarını ve onay durumlarını tek yerden yönetir, müşterilere otomatik WhatsApp bilgilendirmesi gönderirsiniz.", action: "Çift kayıt ve karışıklık biter, masa planınız her zaman doğru olur." },
+  { view: "mutfak", title: "Mutfak Ekranı", text: "Siparişleriniz anında mutfak ekranına düşer; hazırlanıyor, hazır ve servis edildi adımlarını canlı takip edersiniz.", action: "Mutfak ile salon arasındaki iletişim hızlanır, geciken sipariş kalmaz." },
+  { view: "genel", title: "Size Özel Kurulum", text: "Bu sistem; işletmenizin menüsüne, masa düzenine ve çalışma şekline göre tamamen size özel kurulur.", action: "Kısa bir görüşmeyle sistemi işletmenize uyarlayalım." },
+];
+
+const ASSISTANT_GREETING =
+  "Merhaba! Ben RestaurantOS işletme asistanınız. Restoranınızla ilgili merak ettiklerinizi sorabilir veya aşağıdaki hazır sorulardan birini seçebilirsiniz.";
+
+const ASSISTANT = [
+  { q: "Bugün en çok hangi ürün satıyor?", a: "Bugün en çok satan ürün 'Izgara Köfte' (64 adet), ardından 'Cheeseburger' (51 adet) ve 'Serpme Kahvaltı' (38 adet) geliyor. Adisyon başına en yüksek geliri ise Serpme Kahvaltı ve Karışık Izgara getiriyor; bu ürünleri QR menüde öne çıkarmanızı öneririm." },
+  { q: "Hangi masalar daha hızlı dönüyor?", a: "Kahve ve tatlı ağırlıklı M2, M7 ve M10 gibi 2-3 kişilik masalar ortalama 25-30 dakikada devrediyor; en hızlı dönen masalar bunlar. M5 gibi 6 kişilik masalar ise 1 saati aşıyor. Hızlı devreden küçük masaları kapıya yakın konumlandırarak doluluğu artırabilirsiniz." },
+  { q: "Mutfakta geciken sipariş var mı?", a: "Şu an mutfak ekranında 'Hazırlanıyor' durumunda #4821 (2x Burger · 1x Patates) ve 'Yeni' durumunda #4820 (Makarna · Salata) bekliyor. #4819 ise 'Hazır' olarak servisi bekliyor. Servisi bekleyen siparişi öne almanızı öneririm; masa memnuniyeti için kritik." },
+  { q: "Hangi kampanya önerilir?", a: "Öğle saatlerindeki (12:00-15:00) yoğunluğu değerlendirmek için 'Hafta İçi Öğle Menüsü · %20 İndirim' kampanyanız çok iyi çalışıyor (148 kullanım · ₺19.400 ek ciro). Akşam erken saatleri doldurmak için '18:00-19:30 rezervasyonlarında %15' kampanyasını yeniden başlatmanızı öneririm." },
+  { q: "Günlük ciroyu artırmak için ne yapılabilir?", a: "Üç hızlı öneri: 1) En çok satan köfte ve burger yanına üst satış olarak içecek ve tatlı menüsü ekleyin; ortalama adisyon (₺486) yükselir. 2) Hızlı devreden küçük masaları yoğun saatte önceliklendirip masa devrini artırın. 3) Boş kalan akşam erken saatlerine rezervasyon kampanyası uygulayın. Bu üçü birlikte günlük ciroyu belirgin şekilde yükseltir." },
 ];
 
 /* --------------------------- the dashboard mockup --------------------------- */
@@ -330,15 +345,15 @@ function RestaurantPanel() {
   const toast = useDemoToast();
 
   /* ---- live state ---- */
-  const [tables, setTables] = useState(TABLES);
+  const [tables, setTables] = usePersistentState("restaurant.tables", TABLES);
   const [activeCat, setActiveCat] = useState(MENU[0].cat);
   const [basket, setBasket] = useState<Record<string, number>>({});
-  const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
-  const [popular, setPopular] = useState(INITIAL_POPULAR);
-  const [reservations, setReservations] = useState(INITIAL_RESERVATIONS);
+  const [orders, setOrders] = usePersistentState<Order[]>("restaurant.orders", INITIAL_ORDERS);
+  const [popular, setPopular] = usePersistentState("restaurant.popular", INITIAL_POPULAR);
+  const [reservations, setReservations] = usePersistentState("restaurant.reservations", INITIAL_RESERVATIONS);
   const [extraCiro, setExtraCiro] = useState(0);
   const [orderSeq, setOrderSeq] = useState(4822);
-  const [campaigns, setCampaigns] = useState<Campaign[]>(INITIAL_CAMPAIGNS);
+  const [campaigns, setCampaigns] = usePersistentState<Campaign[]>("restaurant.campaigns", INITIAL_CAMPAIGNS);
   const [itemActive, setItemActive] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(MENU.flatMap((m) => m.items).map((it) => [it.name, true])),
   );
@@ -513,6 +528,27 @@ function RestaurantPanel() {
         return { ...c, running };
       }),
     );
+  }
+
+  /* ---- reset ---- */
+  function reset() {
+    setTables(TABLES);
+    setOrders(INITIAL_ORDERS);
+    setPopular(INITIAL_POPULAR);
+    setReservations(INITIAL_RESERVATIONS);
+    setCampaigns(INITIAL_CAMPAIGNS);
+    setItemActive(Object.fromEntries(MENU.flatMap((m) => m.items).map((it) => [it.name, true])));
+    setSettings({ qrSiparis: true, onlineRezervasyon: true, whatsapp: true, googleYorum: true, stokUyari: false });
+    setBasket({});
+    setExtraCiro(0);
+    setOrderSeq(4822);
+    setActiveCat(MENU[0].cat);
+    setWorkHours("10:00 – 24:00");
+    setServiceFee("Yok");
+    setCurrency("₺ Türk Lirası");
+    setPresentOpen(false);
+    setView("genel");
+    toast({ title: "Demo sıfırlandı", desc: "Tüm veriler başlangıç durumuna döndü", tone: "default", icon: RotateCcw });
   }
 
   /* ---------- shared rows ---------- */
@@ -1322,25 +1358,29 @@ function RestaurantPanel() {
   }
 
   return (
-    <BrowserFrame url="restaurantos.app/pano">
-      <div className="lg:grid lg:grid-cols-[180px_1fr] lg:gap-3">
-        <DemoSidebar
-          brand={{ icon: UtensilsCrossed, name: "RestaurantOS" }}
-          items={SIDEBAR}
-          active={view}
-          onSelect={setView}
-          onPresent={() => setPresentOpen(true)}
-        />
-        <div>
-          <DemoMobileNav
-            items={SIDEBAR}
-            active={view}
-            onSelect={setView}
-            onPresent={() => setPresentOpen(true)}
-          />
-          <AnimatedView id={view}>{renderView()}</AnimatedView>
-        </div>
-      </div>
+    <>
+      <LivePanel onReset={reset}>
+        <BrowserFrame url="restaurantos.app/pano">
+          <div className="lg:grid lg:grid-cols-[180px_1fr] lg:gap-3">
+            <DemoSidebar
+              brand={{ icon: UtensilsCrossed, name: "RestaurantOS" }}
+              items={SIDEBAR}
+              active={view}
+              onSelect={setView}
+              onPresent={() => setPresentOpen(true)}
+            />
+            <div>
+              <DemoMobileNav
+                items={SIDEBAR}
+                active={view}
+                onSelect={setView}
+                onPresent={() => setPresentOpen(true)}
+              />
+              <AnimatedView id={view}>{renderView()}</AnimatedView>
+            </div>
+          </div>
+        </BrowserFrame>
+      </LivePanel>
 
       <PresentationMode
         open={presentOpen}
@@ -1348,7 +1388,9 @@ function RestaurantPanel() {
         onClose={() => setPresentOpen(false)}
         onStepView={setView}
       />
-    </BrowserFrame>
+
+      <DemoAssistant title="AI Asistan" greeting={ASSISTANT_GREETING} items={ASSISTANT} />
+    </>
   );
 }
 
@@ -1361,6 +1403,7 @@ export function RestaurantSite() {
       theme={demoThemes.restaurant}
       name="RestaurantOS"
       sector="Restoran & Kafe Yönetim Sistemi"
+      demoName="RestaurantOS"
       serif
     >
       <DemoHero
@@ -1461,7 +1504,7 @@ export function RestaurantSite() {
         <PricingCards plans={PLANS} />
       </Section>
 
-      <DemoClosingCTA defaultSector="Restoran & Kafe" serif />
+      <DemoClosingCTA defaultSector="Restoran & Kafe" demoName="RestaurantOS" serif />
     </DemoShell>
   );
 }

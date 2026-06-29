@@ -33,6 +33,7 @@ import {
   BrowserFrame,
   ConfirmDialog,
   DemoActionButton,
+  DemoAssistant,
   DemoClosingCTA,
   DemoCounter,
   DemoHero,
@@ -44,6 +45,7 @@ import {
   FeatureGrid,
   FilterChips,
   IconButton,
+  LivePanel,
   MiniBars,
   Panel,
   PresentationMode,
@@ -61,6 +63,7 @@ import {
   Toggle,
   demoThemes,
   useDemoToast,
+  usePersistentState,
   type PresentationStep,
   type SidebarItem,
 } from "@/components/demos/kit";
@@ -131,19 +134,30 @@ const SIDEBAR: SidebarItem[] = [
 ];
 
 const STEPS: PresentationStep[] = [
-  { view: "genel", title: "Genel Bakış", text: "İşletmenizin günlük randevu, gelir ve doluluk durumunu tek ekrandan görürsünüz.", action: "Üstteki canlı kartları (randevu, doluluk, gelir) müşteriye gösterin." },
-  { view: "randevular", title: "Randevu Akışı", text: "Telefon trafiğini azaltıp randevuları düzenli şekilde takip edebilirsiniz.", action: "Bir randevuyu 'Tamamla' ile kapatın; gelir anında artsın." },
-  { view: "musteriler", title: "Müşteri Kartları", text: "Her müşterinin geçmiş işlemleri, tercihleri ve notları kaybolmadan saklanır.", action: "Bir müşteri kartını açıp geçmişini gösterin." },
-  { view: "personeller", title: "Personel Takibi", text: "Hangi personelin ne kadar yoğun olduğunu ve hangi hizmetleri verdiğini takip edebilirsiniz.", action: "Personellerin günlük doluluğunu gösterin." },
-  { view: "gelir", title: "Gelir Takibi", text: "Günlük ve aylık gelirlerinizi net şekilde görebilirsiniz.", action: "Günlük ve haftalık gelir kartlarını gösterin." },
-  { view: "genel", title: "WhatsApp Hatırlatma", text: "Randevu hatırlatmaları ve müşteri geri çağırmaları WhatsApp üzerinden yönetilebilir.", action: "WhatsApp kartından 'Şimdi Gönder'e basın." },
-  { view: "genel", title: "Size Özel Kurulum", text: "Bu sistem işletmenizin hizmetlerine, fiyatlarına ve çalışma düzenine göre özelleştirilebilir.", action: "Sunumu bitirip teklif aşamasına geçin." },
+  { view: "genel", title: "Genel Bakış", text: "İşletmenizin günlük randevu, gelir ve doluluk durumunu tek ekrandan takip edebilirsiniz. Her şey bir bakışta önünüzde.", action: "Telefon başında vakit kaybetmeden işinizi yönetirsiniz." },
+  { view: "randevular", title: "Randevu Yönetimi", text: "Tüm randevularınızı tek ekrandan görür, tamamlandı veya iptal olarak işaretler, yeni randevu eklersiniz. Hiçbir randevu kaçmaz.", action: "Telefon trafiği azalır, koltuklar boş kalmaz." },
+  { view: "musteriler", title: "Müşteri Kartları", text: "Her müşterinizin geçmiş işlemleri, tercihleri ve iletişim bilgileri kayıt altında kalır. Düzenli müşterilerinizi tanırsınız.", action: "Kişiye özel hizmetle müşteri sadakati artar." },
+  { view: "personeller", title: "Personel Takibi", text: "Hangi personelinizin ne kadar yoğun olduğunu ve hangi hizmetleri verdiğini görürsünüz. İş yükünü dengeli dağıtırsınız.", action: "Personel verimliliği ve müşteri memnuniyeti yükselir." },
+  { view: "gelir", title: "Gelir Takibi", text: "Günlük, haftalık ve aylık gelirinizi net rakamlarla takip eder, işletmenizin performansını ölçersiniz.", action: "Kararlarınızı tahminle değil, gerçek verilerle verirsiniz." },
+  { view: "genel", title: "WhatsApp Hatırlatma", text: "Randevu hatırlatmaları ve müşteri geri çağırmaları WhatsApp üzerinden otomatik gönderilir. Müşterileriniz randevularını unutmaz.", action: "Gelmeyen müşteri (no-show) oranı belirgin şekilde düşer." },
+  { view: "genel", title: "Size Özel Kurulum", text: "Bu sistem; işletmenizin hizmetlerine, fiyatlarına ve çalışma düzenine göre tamamen size özel kurulur.", action: "Kısa bir görüşmeyle sistemi işletmenize uyarlayalım." },
+];
+
+const ASSISTANT_GREETING =
+  "Merhaba! Ben Kuaför OS işletme asistanınız. Salonunuzla ilgili merak ettiklerinizi sorabilir veya aşağıdaki hazır sorulardan birini seçebilirsiniz.";
+
+const ASSISTANT = [
+  { q: "Bugün en yoğun saatler hangileri?", a: "Bugün en yoğun saatler 11:00–14:00 arası görünüyor; bu aralıkta personelinizin programı büyük ölçüde dolu. Yeni randevular için 15:00 sonrası daha uygun." },
+  { q: "Hangi hizmet daha çok tercih ediliyor?", a: "Bugün en çok tercih edilen hizmet 'Saç Kesimi', ardından 'Saç + Sakal' geliyor. Keratin Bakımı ise tek işlem başına en yüksek geliri getiriyor." },
+  { q: "Hangi müşterilere tekrar randevu önerelim?", a: "Düzenli aralıklarla gelen (örneğin 3-4 haftada bir) müşterilerinize WhatsApp ile tekrar randevu hatırlatması göndermenizi öneririm. Bu, boş günleri doldurmanın en kolay yolu." },
+  { q: "Personel doluluk oranı nasıl?", a: "Salon doluluğu şu an oldukça yüksek görünüyor. Ahmet Usta en yoğun personel; daha boş programı olan personele yeni randevuları yönlendirerek yükü dengeleyebilirsiniz." },
+  { q: "Bugün geliri artırmak için ne yapabiliriz?", a: "Boş kalan öğleden sonra saatleri için düzenli müşterilerinize 'Saç + Sakal' kampanyası önerebilir, ayrıca Keratin Bakımı gibi yüksek gelirli işlemleri öne çıkararak ciroyu artırabilirsiniz." },
 ];
 
 /* --------------------------- the interactive app --------------------------- */
 function KuaforPanel() {
   const toast = useDemoToast();
-  const [appts, setAppts] = useState<Appt[]>(INITIAL);
+  const [appts, setAppts] = usePersistentState<Appt[]>("kuafor.appts", INITIAL);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [custQuery, setCustQuery] = useState("");
@@ -244,6 +258,19 @@ function KuaforPanel() {
   function openCustomer(name: string) {
     const ap = [...appts].reverse().find((a) => a.name === name);
     if (ap) openDetail(ap);
+  }
+  function reset() {
+    setAppts(INITIAL);
+    setNewCustomers(4);
+    setServiceActive(Object.fromEntries(SERVICES.map((s) => [s, true])));
+    setStaffAvail(Object.fromEntries(STAFF.map((s) => [s, true])));
+    setSettings({ online: true, whatsapp: true, sms: false, kvkk: true });
+    setQuery("");
+    setStatusFilter("all");
+    setCustQuery("");
+    setPresentOpen(false);
+    setView("genel");
+    toast({ title: "Demo sıfırlandı", desc: "Tüm veriler başlangıç durumuna döndü", tone: "default", icon: RotateCcw });
   }
 
   /* ---------- appointment row (shared by Genel & Randevular) ---------- */
@@ -541,7 +568,9 @@ function KuaforPanel() {
   }
 
   return (
-    <BrowserFrame url="kuaforos.app/pano">
+    <>
+      <LivePanel onReset={reset}>
+        <BrowserFrame url="kuaforos.app/pano">
       <div className="lg:grid lg:grid-cols-[180px_1fr] lg:gap-3">
         <DemoSidebar brand={{ icon: Scissors, name: "Kuaför OS" }} items={SIDEBAR} active={view} onSelect={setView} onPresent={() => setPresentOpen(true)} />
         <div>
@@ -549,6 +578,8 @@ function KuaforPanel() {
           <AnimatedView id={view}>{renderView()}</AnimatedView>
         </div>
       </div>
+        </BrowserFrame>
+      </LivePanel>
 
       {/* detail modal */}
       <DemoModal
@@ -600,7 +631,9 @@ function KuaforPanel() {
       <ConfirmDialog open={confirmId !== null} title="Randevu iptal edilsin mi?" message="Bu randevu iptal edilecek. İstediğiniz zaman geri alabilirsiniz." confirmLabel="Evet, iptal et" cancelLabel="Vazgeç" onConfirm={() => confirmId !== null && cancel(confirmId)} onClose={() => setConfirmId(null)} />
 
       <PresentationMode open={presentOpen} steps={STEPS} onClose={() => setPresentOpen(false)} onStepView={setView} />
-    </BrowserFrame>
+
+      <DemoAssistant title="AI Asistan" greeting={ASSISTANT_GREETING} items={ASSISTANT} />
+    </>
   );
 }
 
@@ -666,7 +699,7 @@ export function KuaforSite() {
       <Section eyebrow="Paketler" title="İşletmenize göre esnek paketler" subtitle="Fiyatlar salonunuzun büyüklüğüne göre belirlenir. Net teklif için bir mesaj yeterli.">
         <PricingCards plans={PLANS} />
       </Section>
-      <DemoClosingCTA defaultSector="Berber & Kuaför" />
+      <DemoClosingCTA defaultSector="Berber & Kuaför" demoName="Kuaför OS" />
     </DemoShell>
   );
 }

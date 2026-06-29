@@ -20,6 +20,7 @@ import {
   MapPin,
   MessageCircle,
   Phone,
+  RotateCcw,
   Ruler,
   Settings,
   Star,
@@ -36,6 +37,7 @@ import {
   BrowserFrame,
   ConfirmDialog,
   DemoActionButton,
+  DemoAssistant,
   DemoClosingCTA,
   DemoCounter,
   DemoHero,
@@ -47,6 +49,7 @@ import {
   FeatureGrid,
   FilterChips,
   IconButton,
+  LivePanel,
   MiniBars,
   Panel,
   PresentationMode,
@@ -63,6 +66,7 @@ import {
   Toggle,
   demoThemes,
   useDemoToast,
+  usePersistentState,
   type PresentationStep,
   type SidebarItem,
 } from "@/components/demos/kit";
@@ -258,13 +262,24 @@ const SIDEBAR: SidebarItem[] = [
 ];
 
 const STEPS: PresentationStep[] = [
-  { view: "genel", title: "Portföy Genel Bakışı", text: "Aktif portföy, bu ayki satış ve komisyon durumunu tek ekrandan görürsünüz.", action: "Üstteki canlı kartları gösterin." },
-  { view: "adaylar", title: "Müşteri Adayları", text: "Gelen her müşteri adayı kaydedilir; bir danışman ayrılsa bile adaylar kaybolmaz.", action: "Bir müşteri adayı kartını açın." },
-  { view: "surec", title: "Satış Süreci", text: "Adaylar Yeni Başvuru → İlk Görüşme → Teklif → Sözleşme → Tamamlandı aşamalarında takip edilir.", action: "Bir kartı ileri aşamaya taşıyın; komisyon güncellensin." },
-  { view: "danismanlar", title: "Danışman Takibi", text: "Hangi danışmanın ne kadar sattığını ve performansını görürsünüz.", action: "Danışman performans kartlarını gösterin." },
-  { view: "komisyonlar", title: "Komisyon Takibi", text: "Kapanan satışların komisyonları otomatik hesaplanır.", action: "Komisyon dağılımını gösterin." },
-  { view: "raporlar", title: "Raporlar", text: "Satış hacmi, bölge ve ilan tipi analizlerini net görürsünüz.", action: "Rapor kartlarını gösterin." },
-  { view: "genel", title: "Size Özel Kurulum", text: "Bu sistem ofisinizin portföyüne, ekibine ve çalışma düzenine göre özelleştirilebilir.", action: "Sunumu bitirip teklif aşamasına geçin." },
+  { view: "genel", title: "Portföy Genel Bakışı", text: "Aktif portföyünüzü, bu ayki satışlarınızı ve komisyon durumunuzu tek ekrandan görürsünüz. Ofisinizin tüm tablosu bir bakışta önünüzde.", action: "Dağınık ilanlarla uğraşmadan işinizi yönetirsiniz." },
+  { view: "adaylar", title: "Müşteri Adayları", text: "Gelen her müşteri adayı kayıt altına alınır; bir danışmanınız ayrılsa bile adaylarınız ve geçmiş görüşmeler kaybolmaz.", action: "Hiçbir sıcak fırsat unutulup rakip ofise gitmez." },
+  { view: "surec", title: "Satış Süreci", text: "Müşteri adaylarınızı Yeni Başvuru, İlk Görüşme, Teklif, Sözleşme ve Tamamlandı aşamalarında adım adım takip edersiniz. Hangi müşteri hangi aşamada, net görünür.", action: "Kapanışa yakın fırsatlarınız soğumadan sonuçlanır." },
+  { view: "danismanlar", title: "Danışman Takibi", text: "Hangi danışmanınızın ne kadar sattığını, kaç açık adayı olduğunu ve performansını görürsünüz. İş yükü ve hedefler şeffaf kalır.", action: "Ekibinizi gerçek verilerle yönetir, prim adaletini sağlarsınız." },
+  { view: "komisyonlar", title: "Komisyon Takibi", text: "Kapanan her satışın komisyonu otomatik hesaplanır; danışman bazında kimin ne kadar hak ettiğini anında görürsünüz.", action: "Komisyon hesabı Excel'de değil, tek tıkla önünüzde." },
+  { view: "raporlar", title: "Raporlar", text: "Aylık satış hacmi, bölge ve ilan tipi analizlerinizi net rakamlarla görür, indirilebilir raporlar alırsınız.", action: "Kararlarınızı tahminle değil, gerçek verilerle verirsiniz." },
+  { view: "genel", title: "Size Özel Kurulum", text: "Bu sistem; ofisinizin portföyüne, ekibinize ve çalışma düzeninize göre tamamen size özel kurulur.", action: "Kısa bir görüşmeyle sistemi ofisinize uyarlayalım." },
+];
+
+const ASSISTANT_GREETING =
+  "Merhaba! Ben EstateOS emlak asistanınız. Ofisinizle ilgili merak ettiklerinizi sorabilir veya aşağıdaki hazır sorulardan birini seçebilirsiniz.";
+
+const ASSISTANT = [
+  { q: "Hangi müşteri adayları öncelikli?", a: "Şu an en öncelikli müşteri adaylarınız teklif ve sözleşme aşamasındakiler: Kerem Şahin ve Elif Yıldız teklif aşamasında, Burak Aslan ise sözleşme imzasına hazır. Bu üç aday kapanışa en yakın olanlar; önce onlara odaklanmanızı öneririm." },
+  { q: "Hangi portföyler daha hızlı satılabilir?", a: "Fiyatı pazara uygun ve talebi yüksek portföyleriniz daha hızlı döner. Bağdat Caddesi 3+1 satılık daireye iki ayrı müşteri adayı (Selin Aydın ve Zeynep Kaya, ikisi de peşin/kredi onaylı) ilgileniyor; Çankaya eşyalı kiralık daire de hızlı taşınacak adayı olduğu için kısa sürede sonuçlanabilir." },
+  { q: "Hangi danışmanın süreci daha yoğun?", a: "Şu an en yoğun danışmanınız Cem Yılmaz: üzerinde 6 işlem ve birden fazla açık müşteri adayı var. Onu Deniz Ak (4 işlem) takip ediyor. Yeni gelen adayları dengelemek için bir kısmını Pınar Öz'e yönlendirebilirsiniz." },
+  { q: "Komisyon beklentisi nedir?", a: "Bu ay kapanan satışlardan elde edilen komisyon panelinizde canlı toplanıyor. Kapanışa yakın işlemler de tamamlandığında; örneğin Burak Aslan'ın kira sözleşmesi ve teklif aşamasındaki satışlar sonuçlandığında, aylık komisyonunuz belirgin şekilde yükselecek." },
+  { q: "Bugün hangi müşteriler aranmalı?", a: "Bugün öncelikle Selin Aydın'ı (Kadıköy 3+1 için görüşme ayarlanacak) ve Elif Yıldız'ı (₺4M pazarlık seviyesindeki ticari mağaza) aramanızı öneririm. Ayrıca Kerem Şahin'in imar evrakı beklenen Göktürk arsası için geri dönüş yapmak süreci hızlandırır." },
 ];
 
 const STAGE_TONE: Record<StageId, "accent" | "warn" | "success" | "soft"> = {
@@ -285,7 +300,7 @@ function EstatePanel() {
   const [presentOpen, setPresentOpen] = useState(false);
 
   /* kanban / satış süreci state */
-  const [leads, setLeads] = useState<Lead[]>(INITIAL_LEADS);
+  const [leads, setLeads] = usePersistentState<Lead[]>("estate.leads", INITIAL_LEADS);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [completeLead, setCompleteLead] = useState<Lead | null>(null);
 
@@ -397,6 +412,23 @@ function EstatePanel() {
       icon: CheckCircle2,
     });
     setCompleteLead(null);
+  }
+
+  function reset() {
+    setLeads(INITIAL_LEADS);
+    setSelectedLead(null);
+    setCompleteLead(null);
+    setSelectedListing(null);
+    setQuery("");
+    setTypeFilter("all");
+    setAgentFilter("Tümü");
+    setLeadQuery("");
+    setSettings({ aday: true, whatsapp: true, gorev: true, evSahibi: false, kvkk: true });
+    setRegion("İstanbul Anadolu");
+    setCommissionRate("%3");
+    setPresentOpen(false);
+    setView("genel");
+    toast({ title: "Demo sıfırlandı", desc: "Tüm veriler başlangıç durumuna döndü", tone: "default", icon: RotateCcw });
   }
 
   /* ---------- shared rows ---------- */
@@ -945,20 +977,24 @@ function EstatePanel() {
   }
 
   return (
-    <BrowserFrame url="estateos.app/pano">
-      <div className="lg:grid lg:grid-cols-[190px_1fr] lg:gap-3">
-        <DemoSidebar
-          brand={{ icon: Building2, name: "EstateOS" }}
-          items={SIDEBAR}
-          active={view}
-          onSelect={setView}
-          onPresent={() => setPresentOpen(true)}
-        />
-        <div>
-          <DemoMobileNav items={SIDEBAR} active={view} onSelect={setView} onPresent={() => setPresentOpen(true)} />
-          <AnimatedView id={view}>{renderView()}</AnimatedView>
-        </div>
-      </div>
+    <>
+      <LivePanel onReset={reset}>
+        <BrowserFrame url="estateos.app/pano">
+          <div className="lg:grid lg:grid-cols-[190px_1fr] lg:gap-3">
+            <DemoSidebar
+              brand={{ icon: Building2, name: "EstateOS" }}
+              items={SIDEBAR}
+              active={view}
+              onSelect={setView}
+              onPresent={() => setPresentOpen(true)}
+            />
+            <div>
+              <DemoMobileNav items={SIDEBAR} active={view} onSelect={setView} onPresent={() => setPresentOpen(true)} />
+              <AnimatedView id={view}>{renderView()}</AnimatedView>
+            </div>
+          </div>
+        </BrowserFrame>
+      </LivePanel>
 
       {/* İlan detay modal */}
       <DemoModal
@@ -1107,7 +1143,9 @@ function EstatePanel() {
       />
 
       <PresentationMode open={presentOpen} steps={STEPS} onClose={() => setPresentOpen(false)} onStepView={setView} />
-    </BrowserFrame>
+
+      <DemoAssistant title="AI Asistan" greeting={ASSISTANT_GREETING} items={ASSISTANT} />
+    </>
   );
 }
 
@@ -1199,6 +1237,7 @@ export function EstateSite() {
       theme={demoThemes.estate}
       name="EstateOS"
       sector="Emlak Yönetim Platformu"
+      demoName="EstateOS"
       serif
     >
       <DemoHero
@@ -1254,7 +1293,7 @@ export function EstateSite() {
         <PricingCards plans={PLANS} />
       </Section>
 
-      <DemoClosingCTA defaultSector="Emlak" serif />
+      <DemoClosingCTA defaultSector="Emlak" demoName="EstateOS" serif />
     </DemoShell>
   );
 }

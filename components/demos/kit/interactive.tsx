@@ -11,7 +11,34 @@ import {
 } from "react";
 import { AnimatePresence, animate, motion } from "framer-motion";
 import { Check, Search, X, type LucideIcon } from "lucide-react";
+import { siteConfig } from "@/lib/i18n/dictionaries";
 import { cn } from "@/lib/utils";
+
+/* localStorage-backed state (SSR-safe: renders `initial`, hydrates from storage after mount). */
+export function usePersistentState<T>(key: string, initial: T) {
+  const [state, setState] = useState<T>(initial);
+  const loaded = useRef(false);
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(key);
+      if (raw != null) setState(JSON.parse(raw) as T);
+    } catch {}
+    loaded.current = true;
+  }, [key]);
+  useEffect(() => {
+    if (!loaded.current) return;
+    try {
+      window.localStorage.setItem(key, JSON.stringify(state));
+    } catch {}
+  }, [key, state]);
+  return [state, setState] as const;
+}
+
+/** WhatsApp link with a pre-filled Turkish message naming the demo. */
+export function demoWhatsAppLink(demoName: string) {
+  const msg = `Merhaba, web sitenizdeki ${demoName} demosunu gördüm. İşletmem için benzer bir sistem hakkında bilgi almak istiyorum.`;
+  return `${siteConfig.whatsapp}?text=${encodeURIComponent(msg)}`;
+}
 
 const ease = [0.22, 1, 0.36, 1] as const;
 

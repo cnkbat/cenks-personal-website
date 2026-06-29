@@ -1,12 +1,17 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  Bot,
   Check,
   ChevronLeft,
   ChevronRight,
+  Info,
+  Maximize2,
+  Minimize2,
   Play,
+  RotateCcw,
   Send,
   Sparkles,
   X,
@@ -14,7 +19,7 @@ import {
 } from "lucide-react";
 import { siteConfig } from "@/lib/i18n/dictionaries";
 import { cn } from "@/lib/utils";
-import { DemoActionButton, DemoModal, SelectField, TextField } from "./interactive";
+import { DemoActionButton, DemoModal, SelectField, TextField, demoWhatsAppLink } from "./interactive";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -396,9 +401,11 @@ export function ContactModal({
 /* ------------------------------ Premium closing CTA ------------------------------ */
 export function DemoClosingCTA({
   defaultSector = "Diğer",
+  demoName = "demo",
   serif = false,
 }: {
   defaultSector?: string;
+  demoName?: string;
   serif?: boolean;
 }) {
   const [open, setOpen] = useState(false);
@@ -442,7 +449,7 @@ export function DemoClosingCTA({
             Ücretsiz Demo Talep Et
           </DemoActionButton>
           <a
-            href={siteConfig.whatsapp}
+            href={demoWhatsAppLink(demoName)}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[#25D366] px-6 text-sm font-semibold text-[#06210f] transition-transform hover:-translate-y-0.5"
@@ -454,5 +461,244 @@ export function DemoClosingCTA({
 
       <ContactModal open={open} onClose={() => setOpen(false)} defaultSector={defaultSector} />
     </section>
+  );
+}
+
+/* ------------------------------ Live panel: fullscreen + reset + data note ------------------------------ */
+export function LivePanel({
+  dataNote = "Bu paneldeki veriler örnek olarak hazırlanmıştır. Sistem işletmenize göre özelleştirilir.",
+  onReset,
+  children,
+}: {
+  dataNote?: string;
+  onReset?: () => void;
+  children: ReactNode;
+}) {
+  const [full, setFull] = useState(false);
+
+  useEffect(() => {
+    if (!full) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setFull(false);
+    };
+    window.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [full]);
+
+  return (
+    <div className={full ? "fixed inset-0 z-[55] overflow-y-auto bg-[var(--d-bg)] p-3 sm:p-5" : "relative"}>
+      <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
+        <span className="inline-flex items-center gap-1.5 text-[11px] text-[var(--d-faint)]">
+          <Info className="h-3.5 w-3.5 shrink-0" />
+          <span>{dataNote}</span>
+        </span>
+        <div className="flex items-center gap-1.5">
+          {onReset && (
+            <button
+              type="button"
+              onClick={onReset}
+              className="inline-flex items-center gap-1.5 rounded-full border border-[var(--d-border)] bg-[var(--d-surface)] px-3 py-1.5 text-[11.5px] font-semibold text-[var(--d-muted)] transition-colors hover:text-[var(--d-fg)]"
+            >
+              <RotateCcw className="h-3.5 w-3.5" /> Sıfırla
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setFull((f) => !f)}
+            className="inline-flex items-center gap-1.5 rounded-full bg-[var(--d-accent)] px-3 py-1.5 text-[11.5px] font-semibold text-[var(--d-accent-fg)] transition-transform hover:scale-[1.03]"
+          >
+            {full ? (
+              <>
+                <Minimize2 className="h-3.5 w-3.5" /> Kapat
+              </>
+            ) : (
+              <>
+                <Maximize2 className="h-3.5 w-3.5" /> Tam Ekran
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+/* ------------------------------ In-demo AI assistant ------------------------------ */
+type AssistantQA = { q: string; a: string };
+type ChatMsg = { role: "bot" | "user"; text: string };
+
+export function DemoAssistant({
+  title = "AI Asistan",
+  greeting,
+  items,
+}: {
+  title?: string;
+  greeting: string;
+  items: AssistantQA[];
+}) {
+  const [open, setOpen] = useState(false);
+  const [msgs, setMsgs] = useState<ChatMsg[]>([{ role: "bot", text: greeting }]);
+  const [typing, setTyping] = useState(false);
+  const [input, setInput] = useState("");
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+  }, [msgs, typing, open]);
+
+  function answerFor(text: string) {
+    const t = text.toLocaleLowerCase("tr");
+    const hit = items.find((it) =>
+      it.q
+        .toLocaleLowerCase("tr")
+        .split(/\s+/)
+        .some((w) => w.length > 3 && t.includes(w)),
+    );
+    return (
+      hit?.a ??
+      "Bu konuda panelinizdeki verilere göre size özel öneriler sunabilirim. Yukarıdaki hazır soruları deneyebilir veya sorunuzu biraz daha detaylandırabilirsiniz."
+    );
+  }
+
+  function ask(q: string, a: string) {
+    setMsgs((m) => [...m, { role: "user", text: q }]);
+    setInput("");
+    setTyping(true);
+    window.setTimeout(() => {
+      setMsgs((m) => [...m, { role: "bot", text: a }]);
+      setTyping(false);
+    }, 850);
+  }
+
+  function send() {
+    const text = input.trim();
+    if (!text) return;
+    ask(text, answerFor(text));
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="fixed bottom-24 right-4 z-[57] inline-flex items-center gap-2 rounded-full bg-[var(--d-accent)] px-4 py-2.5 text-[13px] font-semibold text-[var(--d-accent-fg)] shadow-[0_18px_50px_-15px_var(--d-ring)] transition-transform hover:scale-[1.04]"
+      >
+        <Bot className="h-4 w-4" /> {title}
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[72] flex justify-end"
+          >
+            <div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
+            <motion.div
+              initial={{ x: 40, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: 40, opacity: 0 }}
+              transition={{ duration: 0.3, ease }}
+              className="relative flex h-full w-full max-w-sm flex-col border-l border-[var(--d-border)] bg-[var(--d-surface)] shadow-[0_0_120px_-20px_rgba(0,0,0,0.6)]"
+            >
+              <div className="flex items-center justify-between border-b border-[var(--d-border)] px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--d-accent)] text-[var(--d-accent-fg)]">
+                    <Bot className="h-4 w-4" />
+                  </span>
+                  <div>
+                    <div className="text-[13px] font-bold text-[var(--d-fg)]">{title}</div>
+                    <div className="inline-flex items-center gap-1 text-[10px] text-[var(--d-pos)]">
+                      <span className="h-1.5 w-1.5 rounded-full bg-[var(--d-pos)]" /> Çevrimiçi
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  aria-label="Kapat"
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-[var(--d-muted)] hover:bg-[var(--d-surface-2)] hover:text-[var(--d-fg)]"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-4">
+                {msgs.map((m, i) => (
+                  <div key={i} className={cn("flex", m.role === "user" ? "justify-end" : "justify-start")}>
+                    <div
+                      className={cn(
+                        "max-w-[85%] rounded-2xl px-3 py-2 text-[12.5px] leading-relaxed",
+                        m.role === "user"
+                          ? "bg-[var(--d-accent)] text-[var(--d-accent-fg)]"
+                          : "border border-[var(--d-border)] bg-[var(--d-surface-2)] text-[var(--d-fg)]",
+                      )}
+                    >
+                      {m.text}
+                    </div>
+                  </div>
+                ))}
+                {typing && (
+                  <div className="flex justify-start">
+                    <div className="inline-flex items-center gap-1 rounded-2xl border border-[var(--d-border)] bg-[var(--d-surface-2)] px-3 py-2.5">
+                      {[0, 1, 2].map((d) => (
+                        <motion.span
+                          key={d}
+                          className="h-1.5 w-1.5 rounded-full bg-[var(--d-muted)]"
+                          animate={{ opacity: [0.3, 1, 0.3] }}
+                          transition={{ duration: 1, repeat: Infinity, delay: d * 0.15 }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t border-[var(--d-border)] px-3 pt-2.5">
+                <div className="mb-2 flex flex-wrap gap-1.5">
+                  {items.map((it) => (
+                    <button
+                      key={it.q}
+                      type="button"
+                      onClick={() => ask(it.q, it.a)}
+                      className="rounded-full border border-[var(--d-border)] bg-[var(--d-surface-2)] px-2.5 py-1 text-left text-[10.5px] font-medium text-[var(--d-muted)] transition-colors hover:border-[var(--d-accent)]/50 hover:text-[var(--d-fg)]"
+                    >
+                      {it.q}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 border-t border-[var(--d-border)] p-3">
+                <input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") send();
+                  }}
+                  placeholder="Bir mesaj yazın…"
+                  className="flex-1 rounded-full border border-[var(--d-border)] bg-[var(--d-surface-2)] px-3.5 py-2 text-[13px] text-[var(--d-fg)] outline-none placeholder:text-[var(--d-faint)] focus:border-[var(--d-accent)]/60"
+                />
+                <button
+                  type="button"
+                  onClick={send}
+                  aria-label="Gönder"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--d-accent)] text-[var(--d-accent-fg)] transition-transform hover:scale-[1.05]"
+                >
+                  <Send className="h-4 w-4" />
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }

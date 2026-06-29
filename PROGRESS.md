@@ -168,6 +168,23 @@ Approved visuals untouched; all additive. Local React state only.
 - [x] Note: view render helpers are invoked as functions (not `<X/>` JSX) so text-input focus is
       preserved across re-renders. Build green.
 
+### Sales polish — client-facing tour, AI assistant, fullscreen (2026-06-29)
+Final sprint to make demos meeting-ready (shown directly to clients on one screen).
+Additive only; approved visuals untouched.
+- [x] **Sunum Modu rewritten client-facing** — steps now read as a guided product tour for the
+      customer (benefit statements), with all presenter instructions ("gösterin/anlatın/basın")
+      removed, across all 5 demos.
+- [x] **In-demo AI assistant** (`DemoAssistant`) on every demo — floating "AI Asistan" button +
+      chat drawer with sector-specific suggested questions, simulated smart Turkish answers, typing
+      animation, and a working text input (keyword-matched). No backend.
+- [x] **Fullscreen live panel** (`LivePanel`) — "Tam Ekran" opens the OS as a full overlay
+      (Esc / "Kapat" closes, body scroll-locked); sidebar, AI, Sunum Modu all keep working inside.
+- [x] **Sales polish:** "Sıfırla" reset button (restores demo to initial state between meetings),
+      `localStorage` persistence (`usePersistentState`) so interactions survive refresh, a subtle
+      "Bu paneldeki veriler örnek olarak hazırlanmıştır…" data note, and pre-filled Turkish
+      WhatsApp messages naming each demo (`demoWhatsAppLink`).
+- [x] Final Turkish sweep (Lead→Müşteri Adayı, Pipeline→Satış Süreci, etc.); brand acronyms kept.
+
 ---
 
 ## Preserved (separate product — do not remove)

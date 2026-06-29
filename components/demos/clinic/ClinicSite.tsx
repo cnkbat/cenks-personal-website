@@ -17,6 +17,7 @@ import {
   LogIn,
   MessageCircle,
   Receipt,
+  RotateCcw,
   Settings,
   Stethoscope,
   TrendingUp,
@@ -31,6 +32,7 @@ import {
   BrowserFrame,
   ConfirmDialog,
   DemoActionButton,
+  DemoAssistant,
   DemoClosingCTA,
   DemoCounter,
   DemoHero,
@@ -42,6 +44,7 @@ import {
   Donut,
   FeatureGrid,
   FilterChips,
+  LivePanel,
   MiniBars,
   Panel,
   PresentationMode,
@@ -59,6 +62,7 @@ import {
   Toggle,
   demoThemes,
   useDemoToast,
+  usePersistentState,
   type PresentationStep,
   type SidebarItem,
 } from "@/components/demos/kit";
@@ -232,22 +236,33 @@ const SIDEBAR: SidebarItem[] = [
 ];
 
 const STEPS: PresentationStep[] = [
-  { view: "genel", title: "Günlük Klinik Akışı", text: "Kliniğin günlük hasta, doluluk ve tahsilat durumunu tek ekrandan görürsünüz.", action: "Üstteki canlı kartları gösterin." },
-  { view: "takvim", title: "Doktor Takvimi", text: "Her hekimin müsait saatleri tek ekranda; çakışan randevular biter.", action: "Bir hastayı 'Geldi' ve 'Tamamla' ile ilerletin." },
-  { view: "hastalar", title: "Hasta Kartları", text: "Hasta bilgileri, geçmiş tedaviler ve ödemeler tek kartta toplanır.", action: "Bir hasta kartını açın." },
-  { view: "hastalar", title: "Tedavi Geçmişi", text: "Geçmiş tedaviler ve reçeteler kaybolmadan saklanır.", action: "Hasta kartında 'Geçmiş' sekmesini gösterin." },
-  { view: "odemeler", title: "Ödeme Takibi", text: "Tahsil edilen ve bekleyen ödemeler tek panelde; hiçbir alacak kaçmaz.", action: "Bekleyen bir ödemeyi 'Tahsil Et' ile kapatın." },
-  { view: "genel", title: "Hatırlatmalar", text: "Randevu ve kontrol hatırlatmaları WhatsApp/SMS ile otomatik gönderilir.", action: "WhatsApp kartından 'Gönder'e basın." },
-  { view: "genel", title: "Size Özel Kurulum", text: "Bu sistem kliniğinizin branşına, hekimlerine ve işleyişine göre özelleştirilebilir.", action: "Sunumu bitirip teklif aşamasına geçin." },
+  { view: "genel", title: "Günlük Klinik Akışı", text: "Kliniğinizin günlük hasta, doluluk ve tahsilat durumunu tek ekrandan takip eder, bekleyen hastaları ve hekim yoğunluğunu anında görürsünüz.", action: "Klinik körü körüne değil, gerçek verilerle yönetilir." },
+  { view: "takvim", title: "Hekim Takvimi", text: "Her hekimin müsait saatleri tek ekranda görünür; hastalar 'Geldi' ve 'Tamamlandı' aşamalarıyla düzenli bir akışta ilerler.", action: "Aynı saate iki hasta yazılmaz, çakışan randevular biter." },
+  { view: "hastalar", title: "Hasta Kartları", text: "Her hastanızın bilgileri, geçmiş tedavileri ve ödemeleri tek kartta toplanır. Kâğıt klasör karıştırmazsınız.", action: "Geçmişe ulaşmak dakikalar değil, saniyeler alır." },
+  { view: "hastalar", title: "Tedavi Geçmişi", text: "Geçmiş tedaviler, reçeteler ve hekim notları kaybolmadan saklanır; her hastanın hikâyesi tek yerde durur.", action: "Hiçbir dosya arşivde kaybolmaz, bilgi her zaman elinizin altında." },
+  { view: "odemeler", title: "Ödeme Takibi", text: "Tahsil edilen ve bekleyen ödemeleri tek panelden izler, alacaklarınızı tek tıkla hatırlatırsınız.", action: "Hiçbir alacak gözden kaçmaz, kasanız her gün net görünür." },
+  { view: "genel", title: "WhatsApp & SMS Hatırlatma", text: "Randevu ve kontrol hatırlatmaları WhatsApp ve SMS ile otomatik gider; hastalarınız randevularını unutmaz.", action: "Gelmeyen hasta (no-show) oranı belirgin şekilde düşer." },
+  { view: "genel", title: "Size Özel Kurulum", text: "Bu sistem; kliniğinizin branşına, hekimlerine ve çalışma düzenine göre tamamen size özel kurulur.", action: "Kısa bir görüşmeyle sistemi kliniğinize uyarlayalım." },
+];
+
+const ASSISTANT_GREETING =
+  "Merhaba! Ben ClinicOS klinik asistanınız. Kliniğinizle ilgili merak ettiklerinizi sorabilir veya aşağıdaki hazır sorulardan birini seçebilirsiniz.";
+
+const ASSISTANT = [
+  { q: "Bugünkü bekleyen hastalar kimler?", a: "Şu an bekleme salonunda 3 hasta var: Merve Aksoy (Dr. Mehmet Aydın, sırada, 8 dk), Kerem Polat (ilk muayene, evrak bekliyor, 12 dk) ve Selin Yavuz (kontrol, Dr. Selin Korkmaz, 3 dk). En uzun bekleyen Kerem Polat; evrak işlemini öne alıp onu rahatlatabilirsiniz." },
+  { q: "Hangi ödemeler bekliyor?", a: "Tahsil edilmemiş iki ödeme görünüyor: Zeynep Arslan – Fizik Tedavi (10 seans) ₺6.500 ve Ali Çelik – Kanal Tedavisi ₺3.400. Toplam bekleyen alacak ₺9.900. İkisine de Ödemeler ekranından tek tıkla WhatsApp hatırlatması gönderebilirsiniz." },
+  { q: "Hangi doktorda yoğunluk var?", a: "Bugün en yoğun hekim Dr. Mehmet Aydın; doluluğu %92 ve 12 hastası var. Dr. Burak Şahin ise %64 doluluk ve 8 hastayla en boş hekim. Yeni randevuları Dr. Burak Şahin'e yönlendirerek yükü dengeleyebilirsiniz." },
+  { q: "Hangi hastalar kontrole çağrılmalı?", a: "6 ay kontrol zamanı gelen 8 hasta var; özellikle diş taşı temizliği ve dolgu kontrolleri öne çıkıyor. Genel Bakış'taki '6 ay kontrol' kartından tek tıkla otomatik WhatsApp / SMS hatırlatması gönderip boş slotları doldurabilirsiniz." },
+  { q: "Günlük klinik akışında risk var mı?", a: "Bugün 1 no-show riski görünüyor; ayrıca 13:30 Fatma Şen (diş çekimi) henüz onay vermedi. Onaylanmazsa Dr. Burak Şahin'in koltuğu boş kalabilir. Hatırlatma gönderip onay almanızı, alınmazsa bekleyen hastayı bu slota almanızı öneririm." },
 ];
 
 /* --------------------------- the interactive dashboard --------------------------- */
 function ClinicPanel() {
   const toast = useDemoToast();
 
-  const [appts, setAppts] = useState<Appt[]>(SCHEDULE);
-  const [payments, setPayments] = useState<Payment[]>(PAYMENTS);
-  const [waiting, setWaiting] = useState<Waiting[]>(WAITING);
+  const [appts, setAppts] = usePersistentState<Appt[]>("clinic.appts", SCHEDULE);
+  const [payments, setPayments] = usePersistentState<Payment[]>("clinic.payments", PAYMENTS);
+  const [waiting, setWaiting] = usePersistentState<Waiting[]>("clinic.waiting", WAITING);
   const [newRecords, setNewRecords] = useState(6);
 
   const [query, setQuery] = useState("");
@@ -370,6 +385,28 @@ function ClinicPanel() {
 
   function sendReminders(label: string, desc: string) {
     toast({ title: label, desc, tone: "success", icon: MessageCircle });
+  }
+
+  function reset() {
+    setAppts(SCHEDULE);
+    setPayments(PAYMENTS);
+    setWaiting(WAITING);
+    setNewRecords(6);
+    setDocAvail(Object.fromEntries(DOCTORS.map((d) => [d.name, true])));
+    setSettings({ online: true, whatsapp: true, sms: false, kvkk: true });
+    setWorkHours("09:00 – 17:00");
+    setSlotInterval("45 dk");
+    setReminderTime("1 gün önce");
+    setQuery("");
+    setBranchFilter("all");
+    setDoctorFilter("all");
+    setPatientQuery("");
+    setSelected(null);
+    setConfirmWait(null);
+    setTab("bilgiler");
+    setPresentOpen(false);
+    setView("genel");
+    toast({ title: "Demo sıfırlandı", desc: "Tüm veriler başlangıç durumuna döndü", tone: "default", icon: RotateCcw });
   }
 
   // live view of the open appointment so the modal footer/tag reflect state changes
@@ -921,14 +958,18 @@ function ClinicPanel() {
   }
 
   return (
-    <BrowserFrame url="clinicos.app/pano">
-      <div className="lg:grid lg:grid-cols-[180px_1fr] lg:gap-3">
-        <DemoSidebar brand={{ icon: Stethoscope, name: "ClinicOS" }} items={SIDEBAR} active={view} onSelect={setView} onPresent={() => setPresentOpen(true)} />
-        <div>
-          <DemoMobileNav items={SIDEBAR} active={view} onSelect={setView} onPresent={() => setPresentOpen(true)} />
-          <AnimatedView id={view}>{renderView()}</AnimatedView>
-        </div>
-      </div>
+    <>
+      <LivePanel onReset={reset}>
+        <BrowserFrame url="clinicos.app/pano">
+          <div className="lg:grid lg:grid-cols-[180px_1fr] lg:gap-3">
+            <DemoSidebar brand={{ icon: Stethoscope, name: "ClinicOS" }} items={SIDEBAR} active={view} onSelect={setView} onPresent={() => setPresentOpen(true)} />
+            <div>
+              <DemoMobileNav items={SIDEBAR} active={view} onSelect={setView} onPresent={() => setPresentOpen(true)} />
+              <AnimatedView id={view}>{renderView()}</AnimatedView>
+            </div>
+          </div>
+        </BrowserFrame>
+      </LivePanel>
 
       {/* patient profile modal — Bilgiler / Geçmiş / Ödemeler */}
       <DemoModal
@@ -1051,7 +1092,9 @@ function ClinicPanel() {
       />
 
       <PresentationMode open={presentOpen} steps={STEPS} onClose={() => setPresentOpen(false)} onStepView={setView} />
-    </BrowserFrame>
+
+      <DemoAssistant title="AI Asistan" greeting={ASSISTANT_GREETING} items={ASSISTANT} />
+    </>
   );
 }
 
@@ -1144,6 +1187,7 @@ export function ClinicSite() {
       theme={demoThemes.clinic}
       name="ClinicOS"
       sector="Klinik & Hasta Yönetim Sistemi"
+      demoName="ClinicOS"
     >
       <DemoHero
         sector="Klinik & Hasta Yönetim Sistemi"
@@ -1234,7 +1278,7 @@ export function ClinicSite() {
         <PricingCards plans={PLANS} />
       </Section>
 
-      <DemoClosingCTA defaultSector="Klinik / Sağlık" />
+      <DemoClosingCTA defaultSector="Klinik / Sağlık" demoName="ClinicOS" />
     </DemoShell>
   );
 }

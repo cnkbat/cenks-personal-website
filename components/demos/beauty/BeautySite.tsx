@@ -18,6 +18,7 @@ import {
   Phone,
   Plus,
   Repeat,
+  RotateCcw,
   Settings,
   Sparkles,
   Star,
@@ -35,6 +36,7 @@ import {
   BrowserFrame,
   ConfirmDialog,
   DemoActionButton,
+  DemoAssistant,
   DemoClosingCTA,
   DemoCounter,
   DemoHero,
@@ -47,6 +49,7 @@ import {
   FeatureGrid,
   FilterChips,
   IconButton,
+  LivePanel,
   MiniBars,
   Panel,
   PresentationMode,
@@ -64,6 +67,7 @@ import {
   Toggle,
   demoThemes,
   useDemoToast,
+  usePersistentState,
   type PresentationStep,
   type SidebarItem,
 } from "@/components/demos/kit";
@@ -216,21 +220,32 @@ const SIDEBAR: SidebarItem[] = [
 ];
 
 const STEPS: PresentationStep[] = [
-  { view: "genel", title: "Genel Bakış", text: "İşletmenizin günlük randevu, gelir ve aktif paket durumunu tek ekrandan görürsünüz.", action: "Üstteki canlı kartları gösterin." },
-  { view: "randevular", title: "Randevular", text: "Randevuları düzenli takip eder, telefon ve DM trafiğini azaltırsınız.", action: "Bir randevuyu 'Tamamla' ile kapatın." },
-  { view: "musteriler", title: "Müşteri Kartları", text: "Her müşterinin cilt tipi, geçmiş işlemleri ve notları kayıt altında tutulur.", action: "Bir müşteri kartını açın." },
-  { view: "seanslar", title: "Seans ve Paket Takibi", text: "Paket alan müşterinin kalan seansı otomatik düşülür; 'kaç hakkım kaldı' tartışması biter.", action: "Bir pakette 'Seans Kullan'a basın; Donut güncellensin." },
-  { view: "personeller", title: "Personel Performansı", text: "Hangi uzmanın ne kadar yoğun olduğunu ve performansını görürsünüz.", action: "Uzman performans kartlarını gösterin." },
-  { view: "gelir", title: "Gelir Takibi", text: "Günlük ve aylık gelirinizi, paket satışlarını net görürsünüz.", action: "Gelir kartlarını gösterin." },
-  { view: "genel", title: "Size Özel Kurulum", text: "Bu sistem merkezinizin işlemlerine, paketlerine ve çalışma düzenine göre özelleştirilebilir.", action: "Sunumu bitirip teklif aşamasına geçin." },
+  { view: "genel", title: "Genel Bakış", text: "Merkezinizin günlük randevu, gelir ve aktif paket durumunu tek ekrandan takip edersiniz. Her şey bir bakışta önünüzdedir.", action: "Telefon ve DM başında vakit kaybetmeden işinizi yönetirsiniz." },
+  { view: "randevular", title: "Randevu Yönetimi", text: "Tüm randevularınızı tek ekrandan görür, tamamlandı veya iptal olarak işaretlersiniz. Telefon ve Instagram DM trafiği tek bir akışta toplanır.", action: "Mesajlar kaçmaz, çift kayıt ve karışıklık ortadan kalkar." },
+  { view: "musteriler", title: "Müşteri & Cilt Kartları", text: "Her müşterinizin cilt tipi, alerjileri, kullanılan ürünleri ve geçmiş işlemleri kayıt altında kalır. Düzenli müşterilerinizi tanırsınız.", action: "Her seans kişiye özel ilerler, müşteri memnuniyeti artar." },
+  { view: "seanslar", title: "Seans & Paket Takibi", text: "Paket alan müşterinizin kalan seansı her işlemde otomatik düşülür; kaç seansı kaldığını anında görürsünüz.", action: "\"Kaç hakkım kaldı?\" tartışması tamamen biter." },
+  { view: "personeller", title: "Personel Performansı", text: "Hangi uzmanınızın ne kadar yoğun olduğunu, kaç randevu aldığını ve ne kadar gelir getirdiğini görürsünüz.", action: "İş yükünü dengeli dağıtır, ekibinizi adil değerlendirirsiniz." },
+  { view: "gelir", title: "Gelir Takibi", text: "Günlük, haftalık ve aylık gelirinizi, randevu ve paket satışlarını net rakamlarla takip edersiniz.", action: "Kararlarınızı tahminle değil, gerçek verilerle verirsiniz." },
+  { view: "genel", title: "Size Özel Kurulum", text: "Bu sistem; merkezinizin işlemlerine, paketlerine, fiyatlarına ve çalışma düzenine göre tamamen size özel kurulur.", action: "Kısa bir görüşmeyle sistemi merkezinize uyarlayalım." },
+];
+
+const ASSISTANT_GREETING =
+  "Merhaba! Ben Beauty Center CRM işletme asistanınız. Merkezinizle ilgili merak ettiklerinizi sorabilir veya aşağıdaki hazır sorulardan birini seçebilirsiniz.";
+
+const ASSISTANT = [
+  { q: "Hangi müşterilerin seansı azalıyor?", a: "Paketinde kalan seansı 1-2'ye düşen müşterileriniz öne çıkıyor: Ayşe Demir (Lazer Epilasyon · 6/8) ve Elif Yıldız (Hydrafacial · 2/4) yakında bitiyor. Bu müşterilere paket yenileme önerisi göndererek satışı kaçırmadan tekrar randevu oluşturabilirsiniz." },
+  { q: "Hangi paketler daha çok satılıyor?", a: "Bu dönem en çok satan paket 'Lazer Epilasyon', ardından 'Hydrafacial' ve 'Bölgesel İncelme' geliyor. Lazer paketleri hem seans sayısı hem de toplam gelir açısından en kârlı grup; vitrin ve kampanyalarda öne çıkarmanızı öneririm." },
+  { q: "Bugün hangi müşterilere hatırlatma gönderilmeli?", a: "Bugün yarınki randevuları olan müşterilerinize hatırlatma gitmeli: Elif Yıldız (11:30 · Lazer Epilasyon) onay bekliyor. Ayrıca paketi dolmak üzere olan Ayşe Demir'e yenileme hatırlatması göndermek iyi olur. WhatsApp Hatırlatma panelinden tek tıkla gönderebilirsiniz." },
+  { q: "Personel performansı nasıl?", a: "Uzm. Derya %92 ile en yüksek performansa sahip ve en yoğun uzmanınız; Esra %84, Buse %76 seviyesinde. Yeni randevuları daha boş programı olan uzmanlara yönlendirerek yükü dengeleyebilir, müşteri bekleme süresini kısaltabilirsiniz." },
+  { q: "Geliri artırmak için hangi kampanya önerilir?", a: "Düşük yoğunluklu öğle saatlerine (13:00-14:30) 'Cilt Bakımı + Kaş Laminasyonu' kombinasyonunda indirimli bir kampanya önerebilirim. Ayrıca paketi biten müşterilere özel yenileme indirimi, en hızlı geri dönüşü sağlayan ve sadık müşteriyi elde tutan kampanyadır." },
 ];
 
 /* --------------------------- the interactive panel --------------------------- */
 function BeautyPanel() {
   const toast = useDemoToast();
 
-  const [appts, setAppts] = useState<Appt[]>(INITIAL_APPTS);
-  const [packages, setPackages] = useState<Pkg[]>(INITIAL_PACKAGES);
+  const [appts, setAppts] = usePersistentState<Appt[]>("beauty.appts", INITIAL_APPTS);
+  const [packages, setPackages] = usePersistentState<Pkg[]>("beauty.packages", INITIAL_PACKAGES);
   const [extraRevenue, setExtraRevenue] = useState(0);
   const [newCustomers, setNewCustomers] = useState(7);
 
@@ -412,6 +427,23 @@ function BeautyPanel() {
       tone: "success",
       icon: MessageCircle,
     });
+  }
+
+  function reset() {
+    setAppts(INITIAL_APPTS);
+    setPackages(INITIAL_PACKAGES);
+    setExtraRevenue(0);
+    setNewCustomers(7);
+    setStaffAvail(Object.fromEntries(STAFF.map((s) => [s, true])));
+    setSettings({ online: true, whatsapp: true, sms: false, kvkk: true });
+    setWorkHours("10:00 – 19:00");
+    setIntervalVal("90 dk");
+    setQuery("");
+    setServiceFilter("all");
+    setCustQuery("");
+    setPresentOpen(false);
+    setView("genel");
+    toast({ title: "Demo sıfırlandı", desc: "Tüm veriler başlangıç durumuna döndü", tone: "default", icon: RotateCcw });
   }
 
   /* ---------- appointment row (shared by Genel & Randevular) ---------- */
@@ -1020,7 +1052,7 @@ function BeautyPanel() {
                 <span className="font-semibold text-[var(--d-fg)]">%87</span>
               </li>
               <li className="flex items-center justify-between rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] px-3 py-2.5">
-                <span className="text-[var(--d-muted)]">No-show oranı</span>
+                <span className="text-[var(--d-muted)]">Gelmeyen müşteri oranı</span>
                 <span className="font-semibold text-[var(--d-pos)]">%4</span>
               </li>
               <li className="flex items-center justify-between rounded-xl border border-[var(--d-border)] bg-[var(--d-surface-2)] px-3 py-2.5">
@@ -1101,14 +1133,18 @@ function BeautyPanel() {
   }
 
   return (
-    <BrowserFrame url="beautycrm.app/pano">
-      <div className="lg:grid lg:grid-cols-[180px_1fr] lg:gap-3">
-        <DemoSidebar brand={{ icon: Sparkles, name: "Beauty CRM" }} items={SIDEBAR} active={view} onSelect={setView} onPresent={() => setPresentOpen(true)} />
-        <div>
-          <DemoMobileNav items={SIDEBAR} active={view} onSelect={setView} onPresent={() => setPresentOpen(true)} />
-          <AnimatedView id={view}>{renderView()}</AnimatedView>
-        </div>
-      </div>
+    <>
+      <LivePanel onReset={reset}>
+        <BrowserFrame url="beautycrm.app/pano">
+          <div className="lg:grid lg:grid-cols-[180px_1fr] lg:gap-3">
+            <DemoSidebar brand={{ icon: Sparkles, name: "Beauty CRM" }} items={SIDEBAR} active={view} onSelect={setView} onPresent={() => setPresentOpen(true)} />
+            <div>
+              <DemoMobileNav items={SIDEBAR} active={view} onSelect={setView} onPresent={() => setPresentOpen(true)} />
+              <AnimatedView id={view}>{renderView()}</AnimatedView>
+            </div>
+          </div>
+        </BrowserFrame>
+      </LivePanel>
 
       {/* customer card modal */}
       <DemoModal
@@ -1249,7 +1285,9 @@ function BeautyPanel() {
       />
 
       <PresentationMode open={presentOpen} steps={STEPS} onClose={() => setPresentOpen(false)} onStepView={setView} />
-    </BrowserFrame>
+
+      <DemoAssistant title="AI Asistan" greeting={ASSISTANT_GREETING} items={ASSISTANT} />
+    </>
   );
 }
 
@@ -1341,6 +1379,7 @@ export function BeautySite() {
       theme={demoThemes.beauty}
       name="Beauty Center CRM"
       sector="Güzellik & Estetik Merkezi CRM"
+      demoName="Beauty Center CRM"
       serif
     >
       <DemoHero
@@ -1401,7 +1440,7 @@ export function BeautySite() {
         <PricingCards plans={PLANS} />
       </Section>
 
-      <DemoClosingCTA defaultSector="Güzellik & Estetik" serif />
+      <DemoClosingCTA defaultSector="Güzellik & Estetik" demoName="Beauty Center CRM" serif />
     </DemoShell>
   );
 }

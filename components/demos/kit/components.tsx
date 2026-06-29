@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { siteConfig } from "@/lib/i18n/dictionaries";
 import { type DemoTheme, themeVars } from "@/lib/demos/themes";
-import { DemoToastProvider } from "./interactive";
+import { DemoToastProvider, demoWhatsAppLink } from "./interactive";
 import { cn } from "@/lib/utils";
 
 export const demoSerif = Playfair_Display({
@@ -102,7 +102,7 @@ export function DemoButton({
 }
 
 /* --------------------------- Shell / chrome --------------------------- */
-function TopBar({ name }: { name: string }) {
+function TopBar({ name, waHref }: { name: string; waHref: string }) {
   return (
     <header className="sticky top-0 z-40 border-b border-[var(--d-border)] bg-[var(--d-bg)]/85 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
@@ -117,7 +117,7 @@ function TopBar({ name }: { name: string }) {
           {name}
         </span>
         <a
-          href={siteConfig.whatsapp}
+          href={waHref}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1.5 rounded-full bg-[#25D366] px-3.5 py-1.5 text-[12px] font-semibold text-[#06210f] transition-transform hover:scale-[1.03]"
@@ -150,10 +150,10 @@ function DemoFooter({ name, sector }: { name: string; sector: string }) {
   );
 }
 
-function StickyWhatsApp() {
+function StickyWhatsApp({ waHref }: { waHref: string }) {
   return (
     <a
-      href={siteConfig.whatsapp}
+      href={waHref}
       target="_blank"
       rel="noopener noreferrer"
       className="fixed bottom-5 left-1/2 z-40 inline-flex -translate-x-1/2 items-center gap-2 rounded-full bg-[#25D366] px-5 py-3 text-sm font-semibold text-[#06210f] shadow-[0_18px_50px_-15px_rgba(0,0,0,0.6)] transition-transform hover:scale-[1.03]"
@@ -173,15 +173,18 @@ export function DemoShell({
   theme,
   name,
   sector,
+  demoName,
   serif = false,
   children,
 }: {
   theme: DemoTheme;
   name: string;
   sector: string;
+  demoName?: string;
   serif?: boolean;
   children: ReactNode;
 }) {
+  const waHref = demoWhatsAppLink(demoName ?? name);
   return (
     <div
       style={themeVars(theme)}
@@ -191,10 +194,10 @@ export function DemoShell({
       )}
     >
       <DemoToastProvider>
-        <TopBar name={name} />
+        <TopBar name={name} waHref={waHref} />
         <main>{children}</main>
         <DemoFooter name={name} sector={sector} />
-        <StickyWhatsApp />
+        <StickyWhatsApp waHref={waHref} />
         <div className="h-20" />
       </DemoToastProvider>
     </div>
@@ -248,7 +251,7 @@ export function DemoHero({
               Demo Paneli Gör
               <ArrowRight className="h-4 w-4" />
             </DemoButton>
-            <DemoButton href={siteConfig.whatsapp} variant="whatsapp" external>
+            <DemoButton href={demoWhatsAppLink(name)} variant="whatsapp" external>
               <MessageCircle className="h-4 w-4" />
               WhatsApp ile Görüşelim
             </DemoButton>
