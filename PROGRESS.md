@@ -4,7 +4,7 @@
 
 GitHub: https://github.com/cnkbat/cenks-personal-website
 Live: https://cenk-emir-bat.vercel.app
-Last updated: 2026-06-26
+Last updated: 2026-06-29
 
 ---
 
@@ -49,8 +49,10 @@ project `cenk-emir-bat`.
 - [x] 5 industry product-preview images generated as compact WebP in `public/assets/`
       (beauty-crm, barber, clinic, real-estate, restaurant)
 - [x] Wired into demo cards + demo detail previews; beauty image reused as the hero main dashboard
-- [x] Hero floating phone/analytics/notification stay hand-built (bilingual, crisp)
-- [x] Portrait left as monogram on purpose — `cenk-profile.webp` should be a real photo, not AI
+- [x] Hero floating phone/analytics/notification stay hand-built (bilingual, crisp) — **kept as code
+      by decision**: AI can't render legible small UI text, and code keeps them sharp + TR/EN aware
+- [x] Real owner portrait wired into the About card — `public/assets/cenk-profile.webp`
+      (converted from `me.png`, cropped 4:5 → 1000×1200 WebP, 38 KB); monogram placeholder removed
 
 ### Verified
 - [x] Production build green (all routes static, 0 TS errors; only pre-existing content-machine lint warnings)
@@ -89,9 +91,11 @@ project `cenk-emir-bat`.
 
 ## Pending / next
 
-- [ ] Provide a real photo for `cenk-profile.webp` (About profile card) and swap out the monogram
-- [ ] Optionally generate real images for the hero floating phone/analytics/notification cards
 - [ ] Add a custom domain (Contact + footer currently show the Vercel URL)
+
+### Closed (decided, no longer pending)
+- [x] Real profile photo added to the About card (see Generated visual assets above)
+- [x] Hero floating cards — deliberately kept as hand-built code, not images (see above)
 
 ## Secrets
 

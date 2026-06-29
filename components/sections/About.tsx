@@ -69,20 +69,21 @@ export function About() {
               transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
               className="glass-card shadow-premium relative aspect-[4/5] overflow-hidden rounded-[2rem]"
             >
-              {/* Portrait placeholder */}
+              {/* Portrait */}
               <div className="absolute inset-0 bg-[linear-gradient(165deg,#11142a,#0a0c18)]" />
-              <div className="absolute inset-0 grid-bg-dots opacity-50" />
+              <img
+                src="/assets/cenk-profile.webp"
+                alt="Cenk Emir Bat"
+                width={1000}
+                height={1200}
+                decoding="async"
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+              {/* Bottom gradient so the chips and name plate stay legible */}
               <div
                 aria-hidden
-                className="absolute inset-x-0 top-0 h-2/3 bg-[radial-gradient(ellipse_70%_60%_at_50%_10%,rgba(124,92,255,0.3),transparent_70%)]"
+                className="absolute inset-x-0 bottom-0 h-2/5 bg-[linear-gradient(to_top,rgba(8,10,20,0.85),transparent)]"
               />
-
-              {/* Monogram standing in for the portrait */}
-              <div className="absolute inset-0 flex items-center justify-center pb-20">
-                <div className="relative flex h-32 w-32 items-center justify-center rounded-[2rem] bg-[linear-gradient(135deg,#7c5cff,#22d3ee)] text-5xl font-bold text-white shadow-[0_30px_70px_-15px_rgba(124,92,255,0.85)]">
-                  CB
-                </div>
-              </div>
 
               {/* Top-left chip */}
               <div className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-black/30 px-2.5 py-1 text-[11px] font-medium text-white/80 backdrop-blur-md">
@@ -93,11 +94,6 @@ export function About() {
                 <Sparkles className="h-3 w-3 text-[var(--accent-3)]" />
                 MSc
               </div>
-
-              {/* Asset caption */}
-              <span className="pointer-events-none absolute bottom-[4.7rem] right-3 rounded-md bg-black/45 px-1.5 py-0.5 font-mono text-[8px] leading-none tracking-tight text-white/45 backdrop-blur-sm">
-                cenk-profile.webp · 1000×1200
-              </span>
 
               {/* Bottom name plate */}
               <div className="absolute inset-x-3 bottom-3 flex items-center justify-between rounded-2xl border border-white/10 bg-black/40 px-4 py-3 backdrop-blur-xl">
