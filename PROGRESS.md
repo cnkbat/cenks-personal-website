@@ -211,6 +211,39 @@ Real client delivery (**NOT a demo** — no demo ribbon/wording, not added to th
 
 ---
 
+## Vesper Outreach OS — internal B2B outreach product (`/outreach`, 2026-07-01)
+
+Standalone Node/TypeScript CLI (run via `tsx`), isolated from the Next.js app (own
+`outreach/tsconfig.json`; excluded from root tsconfig/eslint) so it **cannot break the site**.
+Brand **Vesper**. Sells only the 7 services; forbidden services are blocked in code.
+
+### Base sender
+- [x] Pipeline: import → validate → analyze → score → pick offer (of 7) → generate personalized
+      **Turkish** cold email → automated quality review (≥90/100) → spam/near-duplicate check →
+      Gmail send (REST API, OAuth refresh-token) → log → auto follow-ups (3 & 7 business days)
+- [x] Every email: opt-out line + online/offline meeting CTA (`cal.com/cenk-emir-bat/30min`)
+- [x] Safety: `dryRun: true` by default, 20/day · 5/hour limits, do-not-contact, reputation pause
+- [x] Hourly scheduler (`scheduler` daemon / `scheduler:once` for Windows Task Scheduler)
+
+### Lead Hunter OS upgrade (autonomous)
+- [x] New layers: `src/{hunter,enrichment,campaigns,compliance,reputation,inbox,dedupe}` + `autopilot.ts`
+- [x] `hunt` (source adapters → discovered-leads.csv) → `enrich` (fetch site w/ timeout, extract
+      **real** email — never guesses; promote to leads.csv only if email+score≥70+problem+not dup+not DNC)
+      → `dedupe` → `start` → `inbox` (Gmail reply classify) → `optout` (do-not-contact) → `reputation` → `report`
+- [x] `autopilot` chains all 10 steps; no gate bypassed; blocked steps reported, never crashes
+- [x] Adapters: **manual** (paste, no API) + **google_search** (Custom Search, off by default) real;
+      **google_maps/instagram/directory = honest placeholders (no scraping)**
+- [x] 6 İstanbul campaigns in `campaigns.csv` — all **inactive** by default
+- [x] Runtime `data/*.csv` (PII) + `generated/` **gitignored**; `campaigns.csv` + `lead-sources.csv` tracked
+- [x] 5-dimension adversarial review passed; 10 findings fixed (reputation gate on follow-ups,
+      send-time DNC re-check, spam self-collision, etc.)
+- [x] Verified: `outreach:typecheck` 0 errors · `next build` green · autopilot 10/10 dry-run, **nothing sent** ·
+      no forbidden services · docs: README/MANUAL_SETUP/DAILY_WORKFLOW + LEAD_HUNTER/AUTOPILOT/COMPLIANCE/REPUTATION/CAMPAIGNS.md
+- [ ] **Manual to go live:** Gmail API creds (required); optional Google Custom Search / Places / SerpAPI keys;
+      then set `dryRun: false` + `autopilotEnabled: true`. `.env` holds secrets (gitignored).
+
+---
+
 ## Preserved (separate product — do not remove)
 
 - `app/content-machine/privacy` and `app/content-machine/terms` (+ `app/components/legal/LegalLayout.tsx`)

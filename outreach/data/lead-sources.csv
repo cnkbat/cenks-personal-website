@@ -1,0 +1,6 @@
+source_id,name,type,enabled,requires_setup,env_keys,notes
+manual,Manual Import Adapter,manual,true,false,,"generated/hunter/manual/<campaign_id>.csv dosyasına elle bulduğunuz işletmeleri yapıştırın; API gerektirmez"
+google_search,Google Custom Search Adapter,google_search,false,true,GOOGLE_CUSTOM_SEARCH_API_KEY;GOOGLE_CUSTOM_SEARCH_CX,"Google Programmable Search Engine + API anahtarı gerekir (SerpAPI-uyumlu arayüz)"
+google_maps,Google Places (Maps) Adapter,google_maps,false,true,GOOGLE_PLACES_API_KEY,"Google Places API (Text Search) anahtarı gerekir — placeholder, kurulum sonrası aktif olur"
+instagram,Instagram Profil Adapter,instagram,false,true,,"Resmi genel API yok; profilleri manuel/CSV ile içe aktarın — placeholder"
+directory,Website Directory Adapter,directory,false,true,,"İşletme rehberi/dizin adaptörü — placeholder"

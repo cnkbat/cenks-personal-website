@@ -24,6 +24,9 @@
 .DS_Store
 *.pem
 
+# design source files (originals kept locally, not shipped)
+/design-sources
+
 # debug
 npm-debug.log*
 yarn-debug.log*

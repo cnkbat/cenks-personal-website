@@ -1,0 +1,7 @@
+campaign_id,name,city,district,industry,business_type,query,source,max_results,status,created_at,last_run_at,notes
+istanbul_barber,İstanbul Berberler,İstanbul,,barber,erkek kuaförü,"İstanbul berber kuaför",manual,50,inactive,,,"Aktifleştirmek için status=active yapın; source'u google_search/google_maps yapabilirsiniz"
+istanbul_beauty,İstanbul Güzellik Merkezleri,İstanbul,,beauty clinic,güzellik merkezi,"İstanbul güzellik merkezi estetik",manual,50,inactive,,,"Örnek kampanya — pasif"
+istanbul_dental,İstanbul Diş Klinikleri,İstanbul,,dental clinic,diş kliniği,"İstanbul diş kliniği",manual,50,inactive,,,"Örnek kampanya — pasif"
+istanbul_realestate,İstanbul Emlakçılar,İstanbul,,real estate,emlak ofisi,"İstanbul emlak ofisi",manual,50,inactive,,,"Örnek kampanya — pasif"
+istanbul_fitness,İstanbul Pilates / Fitness,İstanbul,,fitness,pilates stüdyosu,"İstanbul pilates reformer fitness",manual,50,inactive,,,"Örnek kampanya — pasif"
+istanbul_cafe,İstanbul Kafe / Restoran,İstanbul,,restaurant/cafe,kafe restoran,"İstanbul kafe restoran",manual,50,inactive,,,"Örnek kampanya — pasif"

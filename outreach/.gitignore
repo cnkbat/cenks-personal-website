@@ -1,0 +1,39 @@
+# Vesper Outreach OS — keep real lead data, send logs and generated emails OUT
+# of git. This repo is public; leads.csv + logs contain business contact data
+# (KVKK/GDPR) and who you contacted. The CLI recreates empty data files on run.
+
+# Runtime lead data + logs (PII)
+data/leads.csv
+data/sent-log.csv
+data/followups.csv
+data/blocked-leads.csv
+data/replies.csv
+
+# Lead Hunter OS runtime data (PII — discovered/enriched businesses, suppression,
+# reputation, reply classifications). campaigns.csv + lead-sources.csv are config
+# and stay tracked.
+data/discovered-leads.csv
+data/enriched-leads.csv
+data/do-not-contact.csv
+data/domain-reputation-log.csv
+data/reply-classifications.csv
+
+# Generated output
+generated/emails/*
+generated/followups/*
+generated/reports/*
+generated/logs/*
+generated/hunter/*
+generated/campaigns/*
+generated/enrichment/*
+generated/inbox/*
+
+# ...but keep the folders themselves in git
+!generated/emails/.gitkeep
+!generated/followups/.gitkeep
+!generated/reports/.gitkeep
+!generated/logs/.gitkeep
+!generated/hunter/.gitkeep
+!generated/campaigns/.gitkeep
+!generated/enrichment/.gitkeep
+!generated/inbox/.gitkeep

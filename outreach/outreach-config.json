@@ -1,0 +1,60 @@
+{
+  "portfolioUrl": "https://cenk-emir-bat.vercel.app",
+  "meetingUrl": "https://cal.com/cenk-emir-bat/30min",
+  "calendarUrl": "https://cal.com/cenk-emir-bat/30min",
+  "senderName": "Cenk Emir Bat",
+  "brandName": "Vesper",
+  "language": "tr",
+  "dryRun": true,
+  "dailySendLimit": 20,
+  "hourlySendLimit": 5,
+  "minLeadScoreToSend": 70,
+  "minEmailQualityScoreToSend": 90,
+  "autoSendEnabled": true,
+  "followupsEnabled": true,
+  "followup1DelayBusinessDays": 3,
+  "followup2DelayBusinessDays": 7,
+  "gmailLabel": "Vesper Outreach",
+  "optOutLine": "Uygun değilse sorun değil, bir daha rahatsız etmeyeyim.",
+  "allowedOffers": [
+    "Premium Website",
+    "AI CRM / Appointment System",
+    "Google Ads",
+    "Meta Ads",
+    "TikTok Ads",
+    "SEO",
+    "AI Business Automation"
+  ],
+  "forbiddenOffers": [
+    "Social Media Management",
+    "Content Creation",
+    "Content Package",
+    "Instagram Management"
+  ],
+  "scheduler": {
+    "enabled": true,
+    "intervalMinutes": 60,
+    "allowDryRun": true,
+    "maxRunsPerDay": 24
+  },
+  "leadHunterEnabled": true,
+  "hunterSources": {
+    "googleCustomSearch": false,
+    "googlePlaces": false,
+    "serpApi": false,
+    "manualImport": true
+  },
+  "apiKeys": {
+    "googleCustomSearchEnv": "GOOGLE_CUSTOM_SEARCH_API_KEY",
+    "googleCustomSearchCxEnv": "GOOGLE_CUSTOM_SEARCH_CX",
+    "googlePlacesEnv": "GOOGLE_PLACES_API_KEY",
+    "serpApiEnv": "SERPAPI_API_KEY"
+  },
+  "maxHunterResultsPerCampaign": 50,
+  "maxWebsiteFetchesPerRun": 30,
+  "requestTimeoutMs": 10000,
+  "minReviewCountPreferred": 20,
+  "pauseOnBounceRateAbove": 0.05,
+  "pauseOnOptOutRateAbove": 0.1,
+  "autopilotEnabled": false
+}

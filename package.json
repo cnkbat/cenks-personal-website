@@ -6,18 +6,36 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "outreach:setup-check": "tsx outreach/src/cli.ts setup-check",
+    "outreach:validate": "tsx outreach/src/cli.ts validate",
+    "outreach:generate": "tsx outreach/src/cli.ts generate",
+    "outreach:send": "tsx outreach/src/cli.ts send",
+    "outreach:start": "tsx outreach/src/cli.ts start",
+    "outreach:followups": "tsx outreach/src/cli.ts followups",
+    "outreach:report": "tsx outreach/src/cli.ts report",
+    "outreach:hunt": "tsx outreach/src/cli.ts hunt",
+    "outreach:enrich": "tsx outreach/src/cli.ts enrich",
+    "outreach:dedupe": "tsx outreach/src/cli.ts dedupe",
+    "outreach:inbox": "tsx outreach/src/cli.ts inbox",
+    "outreach:optout": "tsx outreach/src/cli.ts optout",
+    "outreach:reputation": "tsx outreach/src/cli.ts reputation",
+    "outreach:campaign": "tsx outreach/src/cli.ts campaign",
+    "outreach:autopilot": "tsx outreach/src/cli.ts autopilot",
+    "outreach:scheduler": "tsx outreach/src/scheduler.ts",
+    "outreach:scheduler:once": "tsx outreach/src/scheduler.ts once",
+    "outreach:typecheck": "tsc -p outreach/tsconfig.json"
   },
   "dependencies": {
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "framer-motion": "^12.23.12",
+    "geist": "^1.5.1",
+    "lucide-react": "^0.469.0",
     "next": "16.2.9",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "framer-motion": "^12.23.12",
-    "lucide-react": "^0.469.0",
-    "geist": "^1.5.1",
-    "clsx": "^2.1.1",
-    "tailwind-merge": "^3.3.1",
-    "class-variance-authority": "^0.7.1"
+    "tailwind-merge": "^3.3.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -27,6 +45,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
     "tailwindcss": "^4",
+    "tsx": "^4.22.4",
     "typescript": "^5"
   }
 }
