@@ -4,7 +4,7 @@
 
 GitHub: https://github.com/cnkbat/cenks-personal-website
 Live: https://cenk-emir-bat.vercel.app
-Last updated: 2026-06-29
+Last updated: 2026-07-01
 
 ---
 
@@ -184,6 +184,30 @@ Additive only; approved visuals untouched.
       "Bu paneldeki veriler örnek olarak hazırlanmıştır…" data note, and pre-filled Turkish
       WhatsApp messages naming each demo (`demoWhatsAppLink`).
 - [x] Final Turkish sweep (Lead→Müşteri Adayı, Pipeline→Satış Süreci, etc.); brand acronyms kept.
+
+### Client site: Dyt. İkram Örnek — Bahçelievler Diyetisyen (2026-07-01)
+Real client delivery (**NOT a demo** — no demo ribbon/wording, not added to the homepage or the
+`/demos` grid). Self-contained premium wellness site scoped entirely to one route.
+- [x] Route `/demo/ikram-ornek-diyetisyen` — thin server `page.tsx` (SEO metadata via
+      `title.absolute` + JSON-LD LocalBusiness/MedicalBusiness) → client `IkramSite`
+- [x] Components in `app/demo/ikram-ornek-diyetisyen/_components/` (`IkramSite`, `Navbar`,
+      `shared`, `data`) — private `_components` folder, nothing leaks to other routes
+- [x] Light warm-wellness theme (sage #7E956B / cream #F3EFE7 / olive #4F6245), **Fraunces**
+      display serif (latin-ext for Turkish) + Geist body, signature apothecary-arch motif
+- [x] 13 sections: sticky glass navbar (full-screen mobile menu) · hero (animated headline w/
+      hand-drawn sage underline) · stats · Hakkımda · Sonuçlar · Hizmetler (6) · Süreç (5) ·
+      Tarifler (4) · Blog (4) · Yorumlar (3) · SSS accordion (6) · final CTA · footer + iletişim
+- [x] All-Turkish copy, no medical guarantees, "sonuçlar bireyseldir" disclaimer, initials-only
+      testimonials; CTAs wired real: WhatsApp `wa.me/905388416427` + Google Form randevu
+- [x] 7 brand images generated (OpenAI gpt-image-1) in `public/ikram/` — hero botanical, about
+      flat-lay, CTA atmosphere, 4 recipe photos. **Owner's face intentionally NOT AI-fabricated**
+      (low-res IG refs would misrepresent her); elegant image-ready portrait frame instead,
+      ready to drop in a real professional headshot
+- [x] Adversarial 3-lens review (design / a11y / brief-compliance) applied: full-screen mobile
+      menu overlay, centered process timeline, reduced-motion (`MotionConfig` + count-up),
+      WCAG AA contrast, FAQ aria-controls/aria-hidden, visible focus-visible rings
+- [x] Verified: `tsc` 0 errors, ESLint 0 errors, `next build` green (route static-exported);
+      desktop + mobile visual QA
 
 ---
 
